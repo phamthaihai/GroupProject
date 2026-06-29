@@ -1,4 +1,4 @@
-package entity;
+package hsf.talenthub.group.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
