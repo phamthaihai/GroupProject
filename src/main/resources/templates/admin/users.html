@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('User Management - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <h1>User Management</h1>
+        <p class="subtitle">SCR-08 &mdash; Manage system accounts</p>
+
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <div class="card">
+            <h2>Search &amp; Filter</h2>
+            <form th:action="@{/admin/users}" method="get" class="filter-bar">
+                <label>
+                    Name or Email
+                    <input type="text" name="search" th:value="${search}" placeholder="Search..."/>
+                </label>
+                <label>
+                    Role
+                    <select name="role">
+                        <option value="">All roles</option>
+                        <option th:each="r : ${roles}"
+                                th:value="${r.name()}"
+                                th:text="${#strings.replace(r.name(), '_', ' ')}"
+                                th:selected="${selectedRole == r}"></option>
+                    </select>
+                </label>
+                <label>
+                    Status
+                    <select name="status">
+                        <option value="">All statuses</option>
+                        <option th:each="s : ${statuses}"
+                                th:value="${s.name()}"
+                                th:text="${s.name()}"
+                                th:selected="${selectedStatus == s}"></option>
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a th:href="@{/admin/users}" class="btn btn-secondary">Clear</a>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Create New Account</h2>
+            <form th:action="@{/admin/users}" th:object="${createUserForm}" method="post">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input type="text" id="fullName" th:field="*{fullName}"/>
+                        <span class="field-error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" th:field="*{username}"/>
+                        <span class="field-error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" th:field="*{email}"/>
+                        <span class="field-error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" th:field="*{password}"/>
+                        <span class="field-error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="role">Role</label>
+                        <select id="role" th:field="*{role}">
+                            <option value="">Select role</option>
+                            <option th:each="r : ${creatableRoles}"
+                                    th:value="${r.name()}"
+                                    th:text="${#strings.replace(r.name(), '_', ' ')}"></option>
+                        </select>
+                        <span class="field-error" th:if="${#fields.hasErrors('role')}" th:errors="*{role}"></span>
+                    </div>
+                </div>
+                <div th:if="${#fields.hasGlobalErrors()}" class="field-error" style="margin-top:0.75rem;">
+                    <span th:each="err : ${#fields.globalErrors()}" th:text="${err}"></span>
+                </div>
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-primary">Create Account</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>User List</h2>
+            <table th:if="${!users.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th>Status</th>
+                    <th>Created</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="u : ${users}">
+                    <td th:text="${u.fullName}">Name</td>
+                    <td th:text="${u.username}">user</td>
+                    <td th:text="${u.email}">email</td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="'badge-' + ${#strings.toLowerCase(u.role.name())}"
+                              th:text="${#strings.replace(u.role.name(), '_', ' ')}">ROLE</span>
+                    </td>
+                    <td>
+                        <span class="badge"
+                              th:classappend="'badge-' + ${#strings.toLowerCase(u.status.name())}"
+                              th:text="${u.status.name()}">STATUS</span>
+                    </td>
+                    <td th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}">date</td>
+                    <td class="actions-cell">
+                        <form th:if="${canUnlock[u.id]}"
+                              th:action="@{/admin/users/{id}/unlock(id=${u.id})}" method="post">
+                            <button type="submit" class="btn btn-warning btn-sm">Unlock</button>
+                        </form>
+                        <form th:if="${canDeactivate[u.id]}"
+                              th:action="@{/admin/users/{id}/deactivate(id=${u.id})}" method="post"
+                              onsubmit="return confirm('Deactivate this account?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Deactivate</button>
+                        </form>
+                        <button type="button" class="btn btn-secondary btn-sm" disabled title="Not available in v1">Reactivate</button>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${users.isEmpty()}" style="color:var(--muted);">No users found.</p>
+        </div>
+
+        <a th:href="@{/admin/dashboard}" class="btn btn-secondary">Back to Admin Dashboard</a>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

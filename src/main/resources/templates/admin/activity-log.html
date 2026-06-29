@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Activity Log - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <h1>Activity Log</h1>
+        <p class="subtitle">SCR-09 &mdash; Full activity log (coming in next sprint)</p>
+        <div class="card">
+            <p>The searchable activity log will be available here.</p>
+            <a th:href="@{/admin/dashboard}" class="btn btn-secondary">Back to Admin Dashboard</a>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
