@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('HR Dashboard - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <div class="page-actions">
+            <div>
+                <h1>HR Dashboard</h1>
+                <p class="subtitle">SCR-06 &mdash; Recruitment overview</p>
+            </div>
+            <a th:href="@{/jobs/new}" class="btn btn-primary">Create New Job</a>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="value" th:text="${summary.activeJobCount}">0</div>
+                <div class="label">Active Jobs</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" th:text="${summary.appliedCandidateCount}">0</div>
+                <div class="label">Applied Candidates</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" th:text="${summary.upcomingInterviewCount}">0</div>
+                <div class="label">Interviews (7 days)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Active Job Postings</h2>
+            <table th:if="${!activeJobs.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Department</th>
+                    <th>Applications</th>
+                    <th>Deadline</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="job : ${activeJobs}">
+                    <td th:text="${job.title}">Software Engineer</td>
+                    <td th:text="${job.department}">Engineering</td>
+                    <td th:text="${job.applicationCount}">5</td>
+                    <td th:text="${job.deadline != null ? #temporals.format(job.deadline, 'dd MMM yyyy') : '—'}">—</td>
+                </tr>
+                </tbody>
+            </table>
+            <p th:if="${activeJobs.isEmpty()}" style="color:var(--muted);">No active job postings.</p>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

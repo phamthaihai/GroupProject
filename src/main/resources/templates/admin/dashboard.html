@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin Dashboard - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <div class="page-actions">
+            <div>
+                <h1>Admin Dashboard</h1>
+                <p class="subtitle">SCR-07 &mdash; System overview</p>
+            </div>
+            <div class="btn-group" style="margin-top:0;">
+                <a th:href="@{/admin/users}" class="btn btn-primary">Manage Users</a>
+                <a th:href="@{/admin/activity-log}" class="btn btn-secondary">View Activity Log</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Users by Role</h2>
+            <div class="role-counts">
+                <div class="role-count-item" th:each="entry : ${dashboard.userCountByRole}">
+                    <div class="count" th:text="${entry.value}">0</div>
+                    <div class="role-name" th:text="${#strings.replace(entry.key.name(), '_', ' ')}">ADMIN</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-grid">
+            <a th:href="@{/admin/users(status='LOCKED')}" class="stat-card clickable">
+                <div class="value" th:text="${dashboard.lockedAccountCount}">0</div>
+                <div class="label">Locked Accounts</div>
+            </a>
+            <div class="stat-card">
+                <div class="value" th:text="${dashboard.recruitmentSummary.activeJobCount}">0</div>
+                <div class="label">Active Jobs (System)</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" th:text="${dashboard.recruitmentSummary.appliedCandidateCount}">0</div>
+                <div class="label">Applied Candidates (System)</div>
+            </div>
+            <div class="stat-card">
+                <div class="value" th:text="${dashboard.recruitmentSummary.upcomingInterviewCount}">0</div>
+                <div class="label">Interviews in 7 Days (System)</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Recent Activity</h2>
+            <ul class="activity-list" th:if="${!recentActivity.isEmpty()}">
+                <li th:each="event : ${recentActivity}">
+                    <strong th:text="${event.actorDisplayName}">admin</strong>
+                    &mdash;
+                    <span th:text="${#strings.replace(event.eventType.name(), '_', ' ')}">SIGN IN</span>
+                    <span th:if="${event.description != null}" th:text="' — ' + ${event.description}"></span>
+                    <div class="event-time" th:text="${#temporals.format(event.createdAt, 'dd MMM yyyy HH:mm')}">01 Jan 2026</div>
+                </li>
+            </ul>
+            <p th:if="${recentActivity.isEmpty()}" style="color:var(--muted);">No activity recorded yet.</p>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${title}">TalentHub</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}"/>
+</head>
+<body>
+<header th:fragment="header" class="site-header">
+    <div class="container header-inner">
+        <a th:href="@{/profile}" class="logo">TalentHub</a>
+        <nav class="main-nav" sec:authorize="isAuthenticated()">
+            <a th:href="@{/profile}">Profile</a>
+            <a th:href="@{/hr/dashboard}" sec:authorize="hasAnyRole('ADMIN','HR_MANAGER')">HR Dashboard</a>
+            <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')">Admin Dashboard</a>
+            <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')">Users</a>
+        </nav>
+    </div>
+</header>
+
+<footer th:fragment="footer" class="site-footer">
+    <div class="container">
+        <p>&copy; 2026 TalentHub</p>
+    </div>
+</footer>
+</body>
+</html>

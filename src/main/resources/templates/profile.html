@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('User Profile - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <h1>User Profile</h1>
+        <p class="subtitle">SCR-05 &mdash; Your account information</p>
+
+        <div class="card">
+            <dl class="profile-grid">
+                <dt>Full Name</dt>
+                <dd th:text="${user.fullName}">John Doe</dd>
+
+                <dt>Username</dt>
+                <dd th:text="${user.username}">johndoe</dd>
+
+                <dt>Email</dt>
+                <dd th:text="${user.email}">john@example.com</dd>
+
+                <dt>Role</dt>
+                <dd>
+                    <span class="badge"
+                          th:classappend="'badge-' + ${#strings.toLowerCase(user.role.name())}"
+                          th:text="${#strings.replace(user.role.name(), '_', ' ')}">ADMIN</span>
+                </dd>
+            </dl>
+
+            <div class="btn-group">
+                <a th:href="@{/change-password}" class="btn btn-secondary">Change Password</a>
+                <a th:href="@{/hr/dashboard}" sec:authorize="hasAnyRole('ADMIN','HR_MANAGER')" class="btn btn-secondary">HR Dashboard</a>
+                <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')" class="btn btn-secondary">Admin Dashboard</a>
+                <form th:action="@{/logout}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Sign Out</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

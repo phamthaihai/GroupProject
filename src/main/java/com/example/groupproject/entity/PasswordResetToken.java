@@ -1,10 +1,28 @@
 package com.example.groupproject.entity;
 
 import jakarta.persistence.*;
-import java.time.ZonedDateTime;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+import java.time.Instant;
+
+/**
+ * Entity ánh xạ bảng password_reset_tokens trong talenthub_schema.sql.
+ *
+ * Giữ nguyên từ GroupProject, chỉ:
+ * - Cập nhật import (User vẫn cùng package, không đổi)
+ * - Chuyển ZonedDateTime → Instant (nhất quán toàn project)
+ * - Thêm Lombok
+ *
+ * Đồng bộ schema:
+ *   id, user_id(FK→users), token(UNIQUE), expires_at, used_at(NULL), created_at
+ */
 @Entity
 @Table(name = "password_reset_tokens")
+@Getter
+@Setter
+@NoArgsConstructor
 public class PasswordResetToken {
 
     @Id
@@ -19,18 +37,15 @@ public class PasswordResetToken {
     private String token;
 
     @Column(name = "expires_at", nullable = false)
-    private ZonedDateTime expiresAt;
+    private Instant expiresAt;
 
     @Column(name = "used_at")
-    private ZonedDateTime usedAt;
+    private Instant usedAt;
 
     @Column(name = "created_at", nullable = false, updatable = false)
-    private ZonedDateTime createdAt;
+    private Instant createdAt;
 
-    public PasswordResetToken() {
-    }
-
-    public PasswordResetToken(User user, String token, ZonedDateTime expiresAt) {
+    public PasswordResetToken(User user, String token, Instant expiresAt) {
         this.user = user;
         this.token = token;
         this.expiresAt = expiresAt;
@@ -38,50 +53,6 @@ public class PasswordResetToken {
 
     @PrePersist
     protected void onCreate() {
-        this.createdAt = ZonedDateTime.now();
-    }
-
-    public Integer getId() {
-        return id;
-    }
-
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
-    public User getUser() {
-        return user;
-    }
-
-    public void setUser(User user) {
-        this.user = user;
-    }
-
-    public String getToken() {
-        return token;
-    }
-
-    public void setToken(String token) {
-        this.token = token;
-    }
-
-    public ZonedDateTime getExpiresAt() {
-        return expiresAt;
-    }
-
-    public void setExpiresAt(ZonedDateTime expiresAt) {
-        this.expiresAt = expiresAt;
-    }
-
-    public ZonedDateTime getUsedAt() {
-        return usedAt;
-    }
-
-    public void setUsedAt(ZonedDateTime usedAt) {
-        this.usedAt = usedAt;
-    }
-
-    public ZonedDateTime getCreatedAt() {
-        return createdAt;
+        this.createdAt = Instant.now();
     }
 }
