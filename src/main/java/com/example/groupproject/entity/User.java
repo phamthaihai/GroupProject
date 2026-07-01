@@ -5,6 +5,7 @@ import com.example.groupproject.entity.enums.UserStatus;
 import jakarta.persistence.*;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users")
@@ -24,7 +25,7 @@ public class User {
     private String email;
 
     @Column(name = "password", nullable = false)
-    private String password;
+    private String passwordHash;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "role", nullable = false, length = 20)
@@ -45,22 +46,11 @@ public class User {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
+    private Boolean emailVerified;
+    private String verifyToken;
+    private LocalDateTime verifyTokenExpiresAt;
 
     public User() {
-    }
-
-    public User(Integer id, String fullName, String username, String email,
-                String password, UserRole role, UserStatus status,
-                Short failedLoginCount, Instant lockedAt) {
-        this.id = id;
-        this.fullName = fullName;
-        this.username = username;
-        this.email = email;
-        this.password = password;
-        this.role = role;
-        this.status = status != null ? status : UserStatus.ACTIVE;
-        this.failedLoginCount = failedLoginCount != null ? failedLoginCount : 0;
-        this.lockedAt = lockedAt;
     }
 
     @PrePersist
@@ -107,12 +97,12 @@ public class User {
         this.email = email;
     }
 
-    public String getPassword() {
-        return password;
+    public String getPasswordHash() {
+        return passwordHash;
     }
 
-    public void setPassword(String password) {
-        this.password = password;
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public UserRole getRole() {
@@ -161,5 +151,29 @@ public class User {
 
     public void setUpdatedAt(Instant updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(Boolean emailVerified) {
+        this.emailVerified = emailVerified;
+    }
+
+    public String getVerifyToken() {
+        return verifyToken;
+    }
+
+    public void setVerifyToken(String verifyToken) {
+        this.verifyToken = verifyToken;
+    }
+
+    public LocalDateTime getVerifyTokenExpiresAt() {
+        return verifyTokenExpiresAt;
+    }
+
+    public void setVerifyTokenExpiresAt(LocalDateTime verifyTokenExpiresAt) {
+        this.verifyTokenExpiresAt = verifyTokenExpiresAt;
     }
 }

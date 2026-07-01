@@ -43,7 +43,7 @@ public class DataInitializer implements ApplicationRunner {
         admin.setUsername(DEFAULT_ADMIN_USERNAME);
         admin.setEmail("admin@talenthub.local");
         // Store password as plain text (no hashing)
-        admin.setPassword(DEFAULT_ADMIN_PASSWORD);
+        admin.setPasswordHash(DEFAULT_ADMIN_PASSWORD);
         admin.setRole(UserRole.ADMIN);
         admin.setStatus(UserStatus.ACTIVE);
 

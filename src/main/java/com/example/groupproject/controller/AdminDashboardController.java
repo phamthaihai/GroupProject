@@ -25,17 +25,17 @@ public class AdminDashboardController {
         this.authService = authService;
     }
 
-    @GetMapping("/dashboard")
-    public String dashboard(Model model, HttpSession session) {
-        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-        model.addAttribute("dashboard", dashboardService.getAdminDashboardData());
-        model.addAttribute("recentActivity", dashboardService.getRecentActivityEvents());
-        return "admin/dashboard";
-    }
-
-    @GetMapping("/activity-log")
-    public String activityLog(HttpSession session) {
-        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-        return "admin/activity-log";
-    }
+//    @GetMapping("/dashboard")
+//    public String dashboard(Model model, HttpSession session) {
+//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+//        model.addAttribute("dashboard", dashboardService.getAdminDashboardData());
+//        model.addAttribute("recentActivity", dashboardService.getRecentActivityEvents());
+//        return "admin/dashboard";
+//    }
+//
+//    @GetMapping("/activity-log")
+//    public String activityLog(HttpSession session) {
+//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+//        return "admin/activity-log";
+//    }
 }

@@ -25,12 +25,12 @@ public class HrDashboardController {
         this.authService = authService;
     }
 
-    @GetMapping("/dashboard")
-    public String dashboard(Model model, HttpSession session) {
-        User currentUser = authService.getCurrentUser(session);
-        authService.requireAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
-        model.addAttribute("summary", dashboardService.getRecruitmentSummary(currentUser));
-        model.addAttribute("activeJobs", dashboardService.getActiveJobRows(currentUser));
-        return "hr/dashboard";
-    }
+//    @GetMapping("/dashboard")
+//    public String dashboard(Model model, HttpSession session) {
+//        User currentUser = authService.getCurrentUser(session);
+//        authService.requireAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
+//        model.addAttribute("summary", dashboardService.getRecruitmentSummary(currentUser));
+//        model.addAttribute("activeJobs", dashboardService.getActiveJobRows(currentUser));
+//        return "hr/dashboard";
+//    }
 }
