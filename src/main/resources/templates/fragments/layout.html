@@ -10,12 +10,15 @@
 <body>
 <header th:fragment="header" class="site-header">
     <div class="container header-inner">
-        <a th:href="@{/profile}" class="logo">TalentHub</a>
-        <nav class="main-nav" sec:authorize="isAuthenticated()">
-            <a th:href="@{/profile}">Profile</a>
+        <!-- SCR-13 makes the public job list the primary public entry point. -->
+        <a th:href="@{/jobs}" class="logo">TalentHub</a>
+        <nav class="main-nav">
+            <a th:href="@{/jobs}">Open Positions</a>
+            <a th:href="@{/profile}" sec:authorize="isAuthenticated()">Profile</a>
             <a th:href="@{/hr/dashboard}" sec:authorize="hasAnyRole('ADMIN','HR_MANAGER')">HR Dashboard</a>
             <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')">Admin Dashboard</a>
             <a th:href="@{/admin/users}" sec:authorize="hasRole('ADMIN')">Users</a>
+            <a th:href="@{/login}" sec:authorize="isAnonymous()">User Login</a>
         </nav>
     </div>
 </header>

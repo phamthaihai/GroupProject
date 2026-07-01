@@ -35,7 +35,8 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**").permitAll()
+                        // SCR-13 public job browsing is available to guests.
+                        .requestMatchers("/", "/login", "/register", "/jobs", "/jobs/{id:\\d+}", "/css/**", "/js/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/hr/**", "/jobs/**").hasAnyRole("ADMIN", "HR_MANAGER")
                         .anyRequest().authenticated()
