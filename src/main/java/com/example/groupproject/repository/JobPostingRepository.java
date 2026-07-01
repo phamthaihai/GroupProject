@@ -8,10 +8,12 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
 /**
  * Repository cho entity JobPosting.
  */
-public interface JobPostingRepository extends JpaRepository<JobPosting, Integer> {
+public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>, JpaSpecificationExecutor<JobPosting> {
 
     /** Đếm job theo status — dùng cho dashboard stats */
     long countByStatus(JobStatus status);
@@ -39,4 +41,24 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             """)
     List<JobPosting> findActiveJobs(@Param("status") JobStatus status,
                                     @Param("createdById") Integer createdById);
+
+    @Query("""
+            SELECT j FROM JobPosting j
+            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
+              AND (:status IS NULL OR j.status = :status)
+              AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:department IS NULL OR j.department = :department)
+            ORDER BY j.updatedAt DESC
+            """)
+    List<JobPosting> findJobsForList(@Param("createdById") Integer createdById,
+                                     @Param("status") JobStatus status,
+                                     @Param("keyword") String keyword,
+                                     @Param("department") String department);
+
+    @Query("""
+            SELECT DISTINCT j.department FROM JobPosting j
+            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
+            ORDER BY j.department ASC
+            """)
+    List<String> findDistinctDepartments(@Param("createdById") Integer createdById);
 }

@@ -3,6 +3,10 @@ package com.example.groupproject.entity;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
+import org.hibernate.type.SqlTypes;
 
 import java.time.Instant;
 
@@ -23,7 +27,7 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -31,8 +35,9 @@ public class User {
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "status", nullable = false, length = 20)
-    private UserStatus status = UserStatus.ACTIVE;
+    @JdbcType(PostgreSQLEnumJdbcType.class) // Đây là "vũ khí bí mật" dành riêng cho Postgres Enum trong Hibernate 6
+    @Column(name = "status")
+    private UserStatus status;
 
     @Column(name = "failed_login_count", nullable = false)
     private Short failedLoginCount = 0;

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Job List - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <div class="page-actions">
+            <div>
+                <h1>Job List</h1>
+                <p class="subtitle">SCR-10 &mdash; Manage your job postings</p>
+            </div>
+            <a th:href="@{/jobs/new}" class="btn btn-primary">Create New Job</a>
+        </div>
+
+        <form method="get" th:action="@{/jobs}" class="filter-form card" style="display: flex; gap: 1rem; align-items: center; margin-bottom: 2rem;">
+            <input type="hidden" name="status" th:value="${currentStatus != 'ALL' ? currentStatus : ''}"/>
+            
+            <div style="flex: 1;">
+                <label for="keyword" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Search Jobs</label>
+                <input type="text" id="keyword" name="keyword" th:value="${currentKeyword}" placeholder="Search by title..." style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"/>
+            </div>
+            
+            <div style="flex: 1;">
+                <label for="department" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Department</label>
+                <select id="department" name="department" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+                    <option value="">All Departments</option>
+                    <option th:each="dept : ${departments}" 
+                            th:value="${dept}" 
+                            th:text="${dept}"
+                            th:selected="${dept == currentDepartment}"></option>
+                </select>
+            </div>
+            
+            <div style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a th:href="@{/jobs}" class="btn btn-secondary">Clear</a>
+            </div>
+        </form>
+
+        <div class="tabs" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 0.5rem;">
+            <a th:href="@{/jobs(status='ALL', keyword=${currentKeyword}, department=${currentDepartment})}"
+               th:class="${currentStatus == 'ALL' ? 'tab active' : 'tab'}"
+               style="text-decoration: none; color: inherit; padding: 0.5rem 1rem;">
+                All <span class="badge" th:text="${counts['ALL']}">0</span>
+            </a>
+            <a th:href="@{/jobs(status='DRAFT', keyword=${currentKeyword}, department=${currentDepartment})}"
+               th:class="${currentStatus == 'DRAFT' ? 'tab active' : 'tab'}"
+               style="text-decoration: none; color: inherit; padding: 0.5rem 1rem;">
+                Draft <span class="badge" th:text="${counts['DRAFT']}">0</span>
+            </a>
+            <a th:href="@{/jobs(status='ACTIVE', keyword=${currentKeyword}, department=${currentDepartment})}"
+               th:class="${currentStatus == 'ACTIVE' ? 'tab active' : 'tab'}"
+               style="text-decoration: none; color: inherit; padding: 0.5rem 1rem;">
+                Active <span class="badge" th:text="${counts['ACTIVE']}">0</span>
+            </a>
+            <a th:href="@{/jobs(status='CLOSED', keyword=${currentKeyword}, department=${currentDepartment})}"
+               th:class="${currentStatus == 'CLOSED' ? 'tab active' : 'tab'}"
+               style="text-decoration: none; color: inherit; padding: 0.5rem 1rem;">
+                Closed <span class="badge" th:text="${counts['CLOSED']}">0</span>
+            </a>
+        </div>
+
+        <div class="job-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem;" th:if="${!jobs.isEmpty()}">
+            <div th:each="job : ${jobs}" class="card job-card" style="display: flex; flex-direction: column;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">
+                        <a th:href="@{/jobs/{id}(id=${job.id})}" th:text="${job.title}" style="text-decoration: none; color: var(--text);"></a>
+                    </h3>
+                    <span th:class="'badge badge-' + ${#strings.toLowerCase(job.status)}" th:text="${job.status}"></span>
+                </div>
+                
+                <div style="color: var(--muted); margin-bottom: 1.5rem; flex: 1;">
+                    <div style="margin-bottom: 0.5rem;" th:text="${job.department} + ' &bull; ' + ${job.location}"></div>
+                    <div style="margin-bottom: 0.5rem;">Applications: <strong th:text="${job.applicationCount}"></strong></div>
+                    <div th:if="${job.deadline != null}">Deadline: <span th:text="${#temporals.format(job.deadline, 'dd MMM yyyy')}"></span></div>
+                </div>
+                
+                <div class="card-actions" style="display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: auto;">
+                    <a th:if="${job.status.name() == 'DRAFT' || job.status.name() == 'ACTIVE'}" 
+                       th:href="@{/jobs/{id}/edit(id=${job.id})}" class="btn btn-secondary btn-sm">Edit</a>
+                    
+                    <form th:if="${job.status.name() == 'DRAFT'}" th:action="@{/jobs/{id}/publish(id=${job.id})}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to publish this job?');">
+                        <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+                    </form>
+                    
+                    <form th:if="${job.status.name() == 'ACTIVE'}" th:action="@{/jobs/{id}/close(id=${job.id})}" method="post" style="display:inline;" onsubmit="return confirm('Closing will stop accepting new applications. Existing applications are not affected.');">
+                        <button type="submit" class="btn btn-secondary btn-sm">Close</button>
+                    </form>
+                    
+                    <form th:if="${job.status.name() == 'DRAFT' && job.applicationCount == 0}" th:action="@{/jobs/{id}/delete(id=${job.id})}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this job?');">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${jobs.isEmpty()}" class="card" style="text-align: center; padding: 3rem;">
+            <p style="color: var(--muted); margin-bottom: 1rem;">No job postings match your current filters.</p>
+            <a th:href="@{/jobs/new}" class="btn btn-primary">Create New Job</a>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
