@@ -4,10 +4,10 @@ import com.example.groupproject.dto.CreateUserForm;
 import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
-import com.example.groupproject.security.SecurityUtils;
+import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.UserManagementService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,25 +20,26 @@ import java.util.Map;
 
 /**
  * Controller quản lý user — chỉ ADMIN truy cập (/admin/**).
- *
- * Endpoints:
- *   GET  /admin/users                  — danh sách + filter + form tạo user
- *   POST /admin/users                  — tạo user mới
- *   POST /admin/users/{id}/unlock      — mở khóa tài khoản
- *   POST /admin/users/{id}/deactivate  — deactivate tài khoản
  */
 @Controller
 @RequestMapping("/admin/users")
-@RequiredArgsConstructor
 public class UserManagementController {
 
     private final UserManagementService userManagementService;
+    private final AuthService authService;
+
+    public UserManagementController(UserManagementService userManagementService, AuthService authService) {
+        this.userManagementService = userManagementService;
+        this.authService = authService;
+    }
 
     @GetMapping
     public String listUsers(@RequestParam(required = false) String search,
                             @RequestParam(required = false) UserRole role,
                             @RequestParam(required = false) UserStatus status,
-                            Model model) {
+                            Model model,
+                            HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         List<User> users = userManagementService.searchUsers(search, role, status);
         model.addAttribute("users", users);
         model.addAttribute("search", search);
@@ -56,13 +57,15 @@ public class UserManagementController {
     public String createUser(@Valid @ModelAttribute("createUserForm") CreateUserForm form,
                              BindingResult bindingResult,
                              Model model,
-                             RedirectAttributes redirectAttributes) {
+                             RedirectAttributes redirectAttributes,
+                             HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         if (bindingResult.hasErrors()) {
             populateListModel(model, null, null, null);
             return "admin/users";
         }
         try {
-            User actor = SecurityUtils.getCurrentUser();
+            User actor = authService.getCurrentUser(session);
             userManagementService.createUser(form, actor);
             redirectAttributes.addFlashAttribute("successMessage", "User created successfully");
         } catch (IllegalArgumentException ex) {
@@ -74,9 +77,12 @@ public class UserManagementController {
     }
 
     @PostMapping("/{id}/unlock")
-    public String unlock(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String unlock(@PathVariable Integer id,
+                         RedirectAttributes redirectAttributes,
+                         HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         try {
-            userManagementService.unlockUser(id, SecurityUtils.getCurrentUser());
+            userManagementService.unlockUser(id, authService.getCurrentUser(session));
             redirectAttributes.addFlashAttribute("successMessage", "Account unlocked");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
@@ -85,9 +91,12 @@ public class UserManagementController {
     }
 
     @PostMapping("/{id}/deactivate")
-    public String deactivate(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+    public String deactivate(@PathVariable Integer id,
+                             RedirectAttributes redirectAttributes,
+                             HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         try {
-            userManagementService.deactivateUser(id, SecurityUtils.getCurrentUser());
+            userManagementService.deactivateUser(id, authService.getCurrentUser(session));
             redirectAttributes.addFlashAttribute("successMessage", "Account deactivated");
         } catch (Exception ex) {
             redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());

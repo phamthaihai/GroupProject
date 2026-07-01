@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * Controller cho Job Posting management.
- * Yêu cầu role ADMIN hoặc HR_MANAGER (bảo vệ bởi SecurityConfig: /jobs/**).
+ * Yêu cầu role ADMIN hoặc HR_MANAGER (kiểm tra bởi AuthInterceptor: /jobs/**).
  */
 @Controller
 @RequestMapping("/jobs")

@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments/layout :: head('User Profile - TalentHub')}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header}"></header>
@@ -30,8 +29,8 @@
 
             <div class="btn-group">
                 <a th:href="@{/change-password}" class="btn btn-secondary">Change Password</a>
-                <a th:href="@{/hr/dashboard}" sec:authorize="hasAnyRole('ADMIN','HR_MANAGER')" class="btn btn-secondary">HR Dashboard</a>
-                <a th:href="@{/admin/dashboard}" sec:authorize="hasRole('ADMIN')" class="btn btn-secondary">Admin Dashboard</a>
+                <a th:href="@{/hr/dashboard}" th:if="${canAccessHr}" class="btn btn-secondary">HR Dashboard</a>
+                <a th:href="@{/admin/dashboard}" th:if="${isAdmin}" class="btn btn-secondary">Admin Dashboard</a>
                 <form th:action="@{/logout}" method="post" style="display:inline;">
                     <button type="submit" class="btn btn-danger">Sign Out</button>
                 </form>

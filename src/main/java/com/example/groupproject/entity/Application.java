@@ -2,31 +2,9 @@ package com.example.groupproject.entity;
 
 import com.example.groupproject.entity.enums.ApplicationStatus;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 
-/**
- * Entity ánh xạ bảng applications trong talenthub_schema.sql.
- *
- * Nguồn: G5-TalentHub, đổi package → com.example.groupproject
- *
- * Đồng bộ schema:
- *   id,
- *   job_id(FK→job_postings NOT NULL),
- *   candidate_id(FK→users NOT NULL),
- *   cover_letter(TEXT NULL),
- *   cv_filename(VARCHAR255 NOT NULL),
- *   cv_storage_path(VARCHAR500 NOT NULL),
- *   status(VARCHAR20 default APPLIED),
- *   status_changed_at(TIMESTAMP6 NOT NULL default NOW),
- *   submitted_at(TIMESTAMP6 NOT NULL default NOW),
- *   updated_at(TIMESTAMP6 NOT NULL ON UPDATE)
- *
- * Unique constraint: (job_id, candidate_id) — một ứng viên chỉ apply một job một lần.
- */
 @Entity
 @Table(
     name = "applications",
@@ -35,21 +13,16 @@ import java.time.Instant;
         columnNames = {"job_id", "candidate_id"}
     )
 )
-@Getter
-@Setter
-@NoArgsConstructor
 public class Application {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
 
-    /** FK → job_postings.id */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_id", nullable = false)
     private JobPosting job;
 
-    /** FK → users.id (ứng viên, role = CANDIDATE) */
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "candidate_id", nullable = false)
     private User candidate;
@@ -76,6 +49,9 @@ public class Application {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
+    public Application() {
+    }
+
     @PrePersist
     protected void onCreate() {
         Instant now = Instant.now();
@@ -87,5 +63,85 @@ public class Application {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = Instant.now();
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public JobPosting getJob() {
+        return job;
+    }
+
+    public void setJob(JobPosting job) {
+        this.job = job;
+    }
+
+    public User getCandidate() {
+        return candidate;
+    }
+
+    public void setCandidate(User candidate) {
+        this.candidate = candidate;
+    }
+
+    public String getCoverLetter() {
+        return coverLetter;
+    }
+
+    public void setCoverLetter(String coverLetter) {
+        this.coverLetter = coverLetter;
+    }
+
+    public String getCvFilename() {
+        return cvFilename;
+    }
+
+    public void setCvFilename(String cvFilename) {
+        this.cvFilename = cvFilename;
+    }
+
+    public String getCvStoragePath() {
+        return cvStoragePath;
+    }
+
+    public void setCvStoragePath(String cvStoragePath) {
+        this.cvStoragePath = cvStoragePath;
+    }
+
+    public ApplicationStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ApplicationStatus status) {
+        this.status = status;
+    }
+
+    public Instant getStatusChangedAt() {
+        return statusChangedAt;
+    }
+
+    public void setStatusChangedAt(Instant statusChangedAt) {
+        this.statusChangedAt = statusChangedAt;
+    }
+
+    public Instant getSubmittedAt() {
+        return submittedAt;
+    }
+
+    public void setSubmittedAt(Instant submittedAt) {
+        this.submittedAt = submittedAt;
+    }
+
+    public Instant getUpdatedAt() {
+        return updatedAt;
+    }
+
+    public void setUpdatedAt(Instant updatedAt) {
+        this.updatedAt = updatedAt;
     }
 }
