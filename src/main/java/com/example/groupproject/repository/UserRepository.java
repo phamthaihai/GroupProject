@@ -18,7 +18,7 @@ import java.util.List;
  */
 public interface UserRepository extends JpaRepository<User, Integer> {
 
-    /** Dùng bởi TalentHubUserDetailsService để load user khi đăng nhập */
+    /** Dùng bởi AuthService để load user khi đăng nhập */
     User findByUsername(String username);
 
     /** Dùng bởi UserManagementService để check duplicate email khi tạo user */

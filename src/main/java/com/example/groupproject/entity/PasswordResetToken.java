@@ -1,28 +1,11 @@
 package com.example.groupproject.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.Instant;
 
-/**
- * Entity ánh xạ bảng password_reset_tokens trong talenthub_schema.sql.
- *
- * Giữ nguyên từ GroupProject, chỉ:
- * - Cập nhật import (User vẫn cùng package, không đổi)
- * - Chuyển ZonedDateTime → Instant (nhất quán toàn project)
- * - Thêm Lombok
- *
- * Đồng bộ schema:
- *   id, user_id(FK→users), token(UNIQUE), expires_at, used_at(NULL), created_at
- */
 @Entity
 @Table(name = "password_reset_tokens")
-@Getter
-@Setter
-@NoArgsConstructor
 public class PasswordResetToken {
 
     @Id
@@ -45,6 +28,9 @@ public class PasswordResetToken {
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
+    public PasswordResetToken() {
+    }
+
     public PasswordResetToken(User user, String token, Instant expiresAt) {
         this.user = user;
         this.token = token;
@@ -54,5 +40,53 @@ public class PasswordResetToken {
     @PrePersist
     protected void onCreate() {
         this.createdAt = Instant.now();
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+    public String getToken() {
+        return token;
+    }
+
+    public void setToken(String token) {
+        this.token = token;
+    }
+
+    public Instant getExpiresAt() {
+        return expiresAt;
+    }
+
+    public void setExpiresAt(Instant expiresAt) {
+        this.expiresAt = expiresAt;
+    }
+
+    public Instant getUsedAt() {
+        return usedAt;
+    }
+
+    public void setUsedAt(Instant usedAt) {
+        this.usedAt = usedAt;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(Instant createdAt) {
+        this.createdAt = createdAt;
     }
 }

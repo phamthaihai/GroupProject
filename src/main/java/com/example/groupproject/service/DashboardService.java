@@ -17,7 +17,6 @@ import com.example.groupproject.repository.InterviewRepository;
 import com.example.groupproject.repository.JobApplicationCountViewRepository;
 import com.example.groupproject.repository.JobPostingRepository;
 import com.example.groupproject.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,13 +29,8 @@ import java.util.stream.Collectors;
 
 /**
  * Service tổng hợp dữ liệu cho Admin và HR Dashboard.
- *
- * Scope logic:
- *   - ADMIN: xem toàn bộ (scopeCreatedBy = null)
- *   - HR_MANAGER: chỉ xem data của job do mình tạo (scopeCreatedBy = currentUser.id)
  */
 @Service
-@RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class DashboardService {
 
@@ -47,10 +41,20 @@ public class DashboardService {
     private final UserRepository userRepository;
     private final ActivityLogDisplayViewRepository activityLogDisplayViewRepository;
 
-    /**
-     * Lấy recruitment summary (số job active, số applied, số upcoming interview).
-     * currentUser == null → global scope (Admin).
-     */
+    public DashboardService(JobPostingRepository jobPostingRepository,
+                            ApplicationRepository applicationRepository,
+                            InterviewRepository interviewRepository,
+                            JobApplicationCountViewRepository jobApplicationCountViewRepository,
+                            UserRepository userRepository,
+                            ActivityLogDisplayViewRepository activityLogDisplayViewRepository) {
+        this.jobPostingRepository = jobPostingRepository;
+        this.applicationRepository = applicationRepository;
+        this.interviewRepository = interviewRepository;
+        this.jobApplicationCountViewRepository = jobApplicationCountViewRepository;
+        this.userRepository = userRepository;
+        this.activityLogDisplayViewRepository = activityLogDisplayViewRepository;
+    }
+
     public RecruitmentSummary getRecruitmentSummary(User currentUser) {
         Integer scopeCreatedBy = scopeCreatedBy(currentUser);
         LocalDate today = LocalDate.now();
@@ -61,19 +65,11 @@ public class DashboardService {
                 : jobPostingRepository.countByStatusAndCreatedById(JobStatus.ACTIVE, scopeCreatedBy);
 
         long applied = applicationRepository.countByStatusScoped(ApplicationStatus.APPLIED, scopeCreatedBy);
-
         long interviews = interviewRepository.countUpcomingScoped(today, weekAhead, scopeCreatedBy);
 
-        return RecruitmentSummary.builder()
-                .activeJobCount(activeJobs)
-                .appliedCandidateCount(applied)
-                .upcomingInterviewCount(interviews)
-                .build();
+        return new RecruitmentSummary(activeJobs, applied, interviews);
     }
 
-    /**
-     * Lấy danh sách Active Jobs kèm số lượng application — dùng cho HR/Admin dashboard table.
-     */
     public List<ActiveJobRow> getActiveJobRows(User currentUser) {
         Integer scopeCreatedBy = scopeCreatedBy(currentUser);
         List<JobPosting> jobs = jobPostingRepository.findActiveJobs(JobStatus.ACTIVE, scopeCreatedBy);
@@ -85,20 +81,17 @@ public class DashboardService {
                 .map(job -> {
                     JobApplicationCountView count = counts.get(job.getId());
                     long total = count != null ? count.getTotal() : 0L;
-                    return ActiveJobRow.builder()
-                            .id(job.getId())
-                            .title(job.getTitle())
-                            .department(job.getDepartment())
-                            .applicationCount(total)
-                            .deadline(job.getApplicationDeadline())
-                            .build();
+                    return new ActiveJobRow(
+                            job.getId(),
+                            job.getTitle(),
+                            job.getDepartment(),
+                            total,
+                            job.getApplicationDeadline()
+                    );
                 })
                 .toList();
     }
 
-    /**
-     * Lấy toàn bộ dữ liệu cho Admin Dashboard (global scope).
-     */
     public AdminDashboardData getAdminDashboardData() {
         Map<UserRole, Long> userCountByRole = new EnumMap<>(UserRole.class);
         for (UserRole role : UserRole.values()) {
@@ -106,26 +99,15 @@ public class DashboardService {
         }
 
         long lockedCount = userRepository.countByStatus(UserStatus.LOCKED);
-
         RecruitmentSummary summary = getRecruitmentSummary(null);
 
-        return AdminDashboardData.builder()
-                .userCountByRole(userCountByRole)
-                .lockedAccountCount(lockedCount)
-                .recruitmentSummary(summary)
-                .build();
+        return new AdminDashboardData(userCountByRole, lockedCount, summary);
     }
 
-    /** Lấy 10 sự kiện gần nhất cho admin dashboard */
     public List<ActivityLogDisplayView> getRecentActivityEvents() {
         return activityLogDisplayViewRepository.findTop10ByOrderByCreatedAtDesc();
     }
 
-    /**
-     * Xác định scope theo role của currentUser.
-     * HR_MANAGER → scope theo id của họ.
-     * ADMIN (hoặc null) → null = global scope.
-     */
     private Integer scopeCreatedBy(User currentUser) {
         if (currentUser == null) {
             return null;

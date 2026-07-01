@@ -1,7 +1,10 @@
 package com.example.groupproject.controller;
 
+import com.example.groupproject.entity.User;
+import com.example.groupproject.entity.enums.UserRole;
+import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.DashboardService;
-import lombok.RequiredArgsConstructor;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,26 +12,30 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 /**
  * Controller cho Admin Dashboard.
- * Chỉ ADMIN được truy cập (/admin/** được bảo vệ bởi SecurityConfig).
  */
 @Controller
 @RequestMapping("/admin")
-@RequiredArgsConstructor
 public class AdminDashboardController {
 
     private final DashboardService dashboardService;
+    private final AuthService authService;
 
-    /** GET /admin/dashboard — hiển thị admin dashboard với stats và recent activity */
+    public AdminDashboardController(DashboardService dashboardService, AuthService authService) {
+        this.dashboardService = dashboardService;
+        this.authService = authService;
+    }
+
     @GetMapping("/dashboard")
-    public String dashboard(Model model) {
+    public String dashboard(Model model, HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         model.addAttribute("dashboard", dashboardService.getAdminDashboardData());
         model.addAttribute("recentActivity", dashboardService.getRecentActivityEvents());
         return "admin/dashboard";
     }
 
-    /** GET /admin/activity-log — hiển thị trang activity log */
     @GetMapping("/activity-log")
-    public String activityLog() {
+    public String activityLog(HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
         return "admin/activity-log";
     }
 }
