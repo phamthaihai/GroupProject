@@ -1,6 +1,7 @@
 package com.example.groupproject.controller;
 
 import com.example.groupproject.entity.enums.UserRole;
+import com.example.groupproject.service.AuthService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,7 @@ import com.example.groupproject.service.UserService;
 public class LoginController {
 
     @Autowired
-    private UserService userService;
+    private AuthService authService;
 
     @GetMapping("/login")
     public String showFormLogin(@ModelAttribute("msg") String msg,
@@ -63,7 +64,7 @@ public class LoginController {
             return "login";
         }
 
-        User user = userService.login(loginDTO);
+        User user = authService.login(loginDTO);
 
         if (user == null) {
             model.addAttribute("error", "Email hoặc mật khẩu không đúng hoặc tài khoản chưa được kích hoạt");

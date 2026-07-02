@@ -1,6 +1,7 @@
 package com.example.groupproject.controller;
 import com.example.groupproject.dto.ForgotPasswordDTO;
 import com.example.groupproject.dto.ResetPasswordDTO;
+import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.EmailService;
 import com.example.groupproject.service.UserService;
 import jakarta.validation.Valid;
@@ -13,7 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class ResetPasswordController {
     @Autowired
-    private UserService userService;
+    private AuthService authService;
     @Autowired
     private EmailService emailService;
     @GetMapping("/forgot-password")
@@ -36,7 +37,7 @@ public class ResetPasswordController {
             return "forgot-password";
         }
         try {
-            String otp = userService.createResetPasswordOtp(dto);
+            String otp = authService.createResetPasswordOtp(dto);
             emailService.sendResetPasswordEmail(dto.getEmail(), otp);
             ra.addFlashAttribute("msg", "OTP has been sent to your email");
             return "redirect:/reset-password";
@@ -58,21 +59,18 @@ public class ResetPasswordController {
             BindingResult result,
             Model model,
             RedirectAttributes ra) {
-
-        // Nếu form nhập liệu bị trống hoặc sai định dạng Validation
         if (result.hasErrors()) {
-            model.addAttribute("resetPasswordDTO", dto); // Giữ lại dữ liệu đã nhập để hiện lỗi công khai
+            model.addAttribute("resetPasswordDTO", dto);
             return "reset-password";
         }
 
         try {
-            userService.resetPassword(dto);
+            authService.resetPassword(dto);
             ra.addFlashAttribute("msg", "Password reset successfully. Please login.");
             return "redirect:/login";
         } catch (Exception e) {
-            // Nếu sai mã OTP hoặc mật khẩu không khớp từ Service trả về
             model.addAttribute("error", e.getMessage());
-            model.addAttribute("resetPasswordDTO", dto); // Nạp lại DTO tránh form bị mất dữ liệu
+            model.addAttribute("resetPasswordDTO", dto);
             return "reset-password";
         }
     }

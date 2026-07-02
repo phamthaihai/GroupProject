@@ -1,6 +1,7 @@
 package com.example.groupproject.controller;
 import com.example.groupproject.dto.ChangePasswordDTO;
 import com.example.groupproject.entity.User;
+import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @Controller
 public class ChangePasswordController {
     @Autowired
-    private UserService userService;
+    private AuthService authService;
     @GetMapping("/change-password")
     public String showChangePassword(Model model){
         model.addAttribute("changePasswordDTO", new ChangePasswordDTO());
@@ -36,7 +37,7 @@ public class ChangePasswordController {
             return "profile";
         }
         try {
-            userService.changePassword(
+            authService.changePassword(
                     user.getId(),
                     dto.getOldPassword(),
                     dto.getNewPassword(),
