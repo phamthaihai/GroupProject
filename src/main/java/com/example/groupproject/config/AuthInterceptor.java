@@ -20,34 +20,34 @@ public class AuthInterceptor implements HandlerInterceptor {
         this.authService = authService;
     }
 
-    @Override
-    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-            throws Exception {
-        String path = request.getRequestURI();
-        if (isPublicPath(path)) {
-            return true;
-        }
-
-        User user = authService.getCurrentUser(request.getSession(false));
-        if (user == null) {
-            response.sendRedirect("/login");
-            return false;
-        }
-
-        if (path.startsWith("/admin/") && user.getRole() != UserRole.ADMIN) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return false;
-        }
-
-        if ((path.startsWith("/hr/") || path.startsWith("/jobs/"))
-                && user.getRole() != UserRole.ADMIN
-                && user.getRole() != UserRole.HR_MANAGER) {
-            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return false;
-        }
-
-        return true;
-    }
+//    @Override
+//    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+//            throws Exception {
+//        String path = request.getRequestURI();
+//        if (isPublicPath(path)) {
+//            return true;
+//        }
+//
+//        User user = authService.getCurrentUser(request.getSession(false));
+//        if (user == null) {
+//            response.sendRedirect("/login");
+//            return false;
+//        }
+//
+//        if (path.startsWith("/admin/") && user.getRole() != UserRole.ADMIN) {
+//            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+//            return false;
+//        }
+//
+//        if ((path.startsWith("/hr/") || path.startsWith("/jobs/"))
+//                && user.getRole() != UserRole.ADMIN
+//                && user.getRole() != UserRole.HR_MANAGER) {
+//            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
     private boolean isPublicPath(String path) {
         return path.equals("/login")

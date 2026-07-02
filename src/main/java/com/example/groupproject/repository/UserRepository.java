@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository cho entity User.
@@ -17,12 +18,6 @@ import java.util.List;
  *   - Admin user management (searchUsers)
  */
 public interface UserRepository extends JpaRepository<User, Integer> {
-
-    /** Dùng bởi AuthService để load user khi đăng nhập */
-    User findByUsername(String username);
-
-    /** Dùng bởi UserManagementService để check duplicate email khi tạo user */
-    User findByEmail(String email);
 
     /** Đếm số user theo role — dùng cho admin dashboard */
     long countByRole(UserRole role);
@@ -53,4 +48,17 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     List<User> searchUsers(@Param("search") String search,
                            @Param("role") UserRole role,
                            @Param("status") UserStatus status);
+
+
+        Optional<User> findByEmail(String email);
+        User findByUsername(String username);
+        boolean existsByEmail(String email);
+
+    boolean existsByEmailAndIdNot(String email, Integer id);
+
+    Optional<User> findByVerifyToken(String verifyToken);
+
+    Optional<User> findByEmailIgnoreCase(String email);
+
+    List<User> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(String email, String fullName);
 }

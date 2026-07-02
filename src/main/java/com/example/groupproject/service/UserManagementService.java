@@ -60,7 +60,7 @@ public class UserManagementService {
         user.setUsername(form.getUsername().trim());
         user.setEmail(form.getEmail().trim().toLowerCase());
         // Store password as plain text (no hashing)
-        user.setPassword(form.getPassword());
+        user.setPasswordHash(form.getPassword());
         user.setRole(role);
         user.setStatus(UserStatus.ACTIVE);
 
