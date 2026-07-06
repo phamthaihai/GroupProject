@@ -51,7 +51,7 @@ public class UserManagementService {
         if (userRepository.findByUsername(form.getUsername()) != null) {
             throw new IllegalArgumentException("Username already exists");
         }
-        if (userRepository.findByEmail(form.getEmail()) != null) {
+        if (userRepository.findByEmail(form.getEmail()).isPresent()) {
             throw new IllegalArgumentException("Email already exists");
         }
 

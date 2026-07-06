@@ -39,4 +39,27 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             """)
     List<JobPosting> findActiveJobs(@Param("status") JobStatus status,
                                     @Param("createdById") Integer createdById);
+
+
+    // Truy vấn danh sách công việc lọc theo điều kiện và scope người tạo
+    @Query("""
+            SELECT j FROM JobPosting j
+            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
+              AND (:status IS NULL OR j.status = :status)
+              AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
+              AND (:department IS NULL OR j.department = :department)
+            ORDER BY j.updatedAt DESC
+            """)
+    List<JobPosting> findJobsForList(@Param("createdById") Integer createdById,
+                                     @Param("status") JobStatus status,
+                                     @Param("keyword") String keyword,
+                                     @Param("department") String department);
+
+    // 2. Lấy danh sách các phòng ban không trùng lặp để đưa vào dropdown filter
+    @Query("""
+            SELECT DISTINCT j.department FROM JobPosting j
+            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
+            ORDER BY j.department ASC
+            """)
+    List<String> findDistinctDepartments(@Param("createdById") Integer createdById);
 }

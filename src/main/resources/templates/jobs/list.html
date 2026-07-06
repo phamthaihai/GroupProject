@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Jobs Management - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main>
+    <div class="container">
+        <!-- Notification Banners -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <div class="page-actions">
+            <div>
+                <h1>Jobs Management</h1>
+                <p class="subtitle">SCR-10 &mdash; Manage your recruitment postings</p>
+            </div>
+            <a th:href="@{/jobs/new}" class="btn btn-primary">Create New Job</a>
+        </div>
+
+        <!-- Status Filter Tabs -->
+        <div class="status-tabs">
+            <a class="status-tab" th:classappend="${currentStatus == 'ALL'} ? 'active'" 
+               th:href="@{/jobs(status='', keyword=${currentKeyword}, department=${currentDepartment})}">
+                All (<span th:text="${counts.get('ALL')}">0</span>)
+            </a>
+            <a class="status-tab" th:classappend="${currentStatus == 'DRAFT'} ? 'active'" 
+               th:href="@{/jobs(status='DRAFT', keyword=${currentKeyword}, department=${currentDepartment})}">
+                Draft (<span th:text="${counts.get('DRAFT')}">0</span>)
+            </a>
+            <a class="status-tab" th:classappend="${currentStatus == 'ACTIVE'} ? 'active'" 
+               th:href="@{/jobs(status='ACTIVE', keyword=${currentKeyword}, department=${currentDepartment})}">
+                Active (<span th:text="${counts.get('ACTIVE')}">0</span>)
+            </a>
+            <a class="status-tab" th:classappend="${currentStatus == 'CLOSED'} ? 'active'" 
+               th:href="@{/jobs(status='CLOSED', keyword=${currentKeyword}, department=${currentDepartment})}">
+                Closed (<span th:text="${counts.get('CLOSED')}">0</span>)
+            </a>
+        </div>
+
+        <!-- Filter Bar -->
+        <form method="get" th:action="@{/jobs}" class="filter-bar">
+            <!-- Retain current status when filtering -->
+            <input type="hidden" name="status" th:value="${currentStatus == 'ALL' ? '' : currentStatus}"/>
+            
+            <label>
+                Search
+                <input type="text" name="keyword" th:value="${currentKeyword}" placeholder="Search job title..."/>
+            </label>
+            
+            <label>
+                Department
+                <select name="department">
+                    <option value="">All Departments</option>
+                    <option th:each="dept : ${departments}" 
+                            th:value="${dept}" 
+                            th:text="${dept}"
+                            th:selected="${dept == currentDepartment}"></option>
+                </select>
+            </label>
+            
+            <button type="submit" class="btn btn-primary" style="height: 38px; display: inline-flex; align-items: center; justify-content: center;">Filter</button>
+            <a th:href="@{/jobs(status=${currentStatus == 'ALL' ? '' : currentStatus})}" class="btn btn-secondary" style="height: 38px; display: inline-flex; align-items: center; justify-content: center;">Clear</a>
+        </form>
+
+        <!-- Jobs Grid -->
+        <div class="job-grid" th:if="${!jobs.isEmpty()}">
+            <div class="job-card" th:each="job : ${jobs}">
+                <div>
+                    <div class="job-card-header">
+                        <a th:href="@{/jobs/{id}(id=${job.id})}" class="job-card-title" th:text="${job.title}">Job Title</a>
+                        <span class="badge" 
+                              th:classappend="${job.status.name() == 'ACTIVE'} ? 'badge-active' : (${job.status.name() == 'DRAFT'} ? 'badge-draft' : 'badge-closed')"
+                              th:text="${job.status}">STATUS</span>
+                    </div>
+                    
+                    <div class="job-card-meta">
+                        <div class="job-card-meta-item">
+                            <strong>Dept:</strong> <span th:text="${job.department}">Department</span>
+                        </div>
+                        <div class="job-card-meta-item">
+                            <strong>Location:</strong> <span th:text="${job.location}">Location</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="job-card-stats">
+                        <div>
+                            <strong>Applications:</strong> 
+                            <span th:text="${job.applicationCount}" style="font-weight: 700; color: var(--primary);">0</span>
+                        </div>
+                        <div th:if="${job.applicationDeadline != null}">
+                            <strong>Deadline:</strong> 
+                            <span th:text="${#temporals.format(job.applicationDeadline, 'dd MMM yyyy')}">01 Jan 2026</span>
+                        </div>
+                        <div th:if="${job.applicationDeadline == null}">
+                            <strong>Deadline:</strong> <span style="color: var(--muted);">No deadline</span>
+                        </div>
+                    </div>
+
+                    <div class="job-card-actions">
+                        <!-- Edit Button -->
+                        <a th:if="${job.status.name() == 'DRAFT' || job.status.name() == 'ACTIVE'}" 
+                           th:href="@{/jobs/{id}/edit(id=${job.id})}" 
+                           class="btn btn-secondary btn-sm">Edit</a>
+                           
+                        <!-- Publish Button -->
+                        <form th:if="${job.status.name() == 'DRAFT'}" 
+                              th:action="@{/jobs/{id}/publish(id=${job.id})}" 
+                              method="post" 
+                              onsubmit="return confirm('Are you sure you want to publish this job posting? Candidates will be able to view and apply for it.');">
+                            <button type="submit" class="btn btn-primary btn-sm">Publish</button>
+                        </form>
+                        
+                        <!-- Close Button -->
+                        <form th:if="${job.status.name() == 'ACTIVE'}" 
+                              th:action="@{/jobs/{id}/close(id=${job.id})}" 
+                              method="post" 
+                              onsubmit="return confirm('Are you sure you want to close this job posting? Candidates will no longer be able to apply.');">
+                            <button type="submit" class="btn btn-secondary btn-sm">Close</button>
+                        </form>
+                        
+                        <!-- Delete Button -->
+                        <form th:if="${job.status.name() == 'DRAFT' && job.applicationCount == 0}" 
+                              th:action="@{/jobs/{id}/delete(id=${job.id})}" 
+                              method="post" 
+                              onsubmit="return confirm('Are you sure you want to delete this job posting permanently? This action cannot be undone.');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div class="card" th:if="${jobs.isEmpty()}" style="text-align: center; padding: 3rem 1.5rem;">
+            <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5rem;">No job postings match your current filters.</p>
+            <a th:href="@{/jobs/new}" class="btn btn-primary">Create Your First Job</a>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<style>
+    .status-tabs {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 0.5rem;
+        flex-wrap: wrap;
+    }
+    .status-tab {
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        color: var(--muted);
+        font-weight: 600;
+        font-size: 0.9rem;
+        border-radius: 6px;
+        transition: all 0.15s;
+    }
+    .status-tab:hover {
+        color: var(--primary);
+        background: #eef2f7;
+    }
+    .status-tab.active {
+        color: #fff;
+        background: var(--primary);
+    }
+    .job-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+        margin-bottom: 2rem;
+    }
+    .job-card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .job-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    }
+    .job-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        gap: 0.5rem;
+    }
+    .job-card-title {
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--primary);
+        text-decoration: none;
+        line-height: 1.3;
+    }
+    .job-card-title:hover {
+        color: var(--primary-light);
+    }
+    .job-card-meta {
+        font-size: 0.85rem;
+        color: var(--muted);
+        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+    .job-card-stats {
+        border-top: 1px solid var(--border);
+        padding-top: 0.75rem;
+        margin-top: auto;
+        margin-bottom: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.85rem;
+    }
+    .job-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        align-items: center;
+    }
+    .badge-draft { background: #eaeefb; color: #34495e; }
+    .badge-closed { background: #fde8e8; color: #c0392b; }
+    .badge-active { background: #eafaf1; color: #27ae60; }
+</style>
+</body>
+</html>

@@ -5,6 +5,9 @@ import com.example.groupproject.dto.ResetPasswordDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.example.groupproject.dto.RegisterDTO;
 import com.example.groupproject.entity.User;
@@ -145,5 +148,39 @@ public class AuthService {
         }
         user.setPasswordHash(encodePassword(newPassword));
         userRepository.save(user);
+    }
+
+    public User getCurrentUser(HttpSession session) {
+        if (session != null && session.getAttribute("user") != null) {
+            return (User) session.getAttribute("user");
+        }
+        return null;
+    }
+
+    public void requireRole(User user, UserRole requiredRole) {
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        if (user.getRole() != requiredRole) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+    }
+
+    public void requireAnyRole(User user, UserRole... requiredRoles) {
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
+        for (UserRole role : requiredRoles) {
+            if (user.getRole() == role) {
+                return;
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+    }
+
+    public void requireAuthenticated(User user) {
+        if (user == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
+        }
     }
 }

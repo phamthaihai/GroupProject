@@ -14,6 +14,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
     /** Đếm application theo status — dùng cho admin dashboard (global scope) */
     long countByStatus(ApplicationStatus status);
 
+    /** Đếm số lượng ứng tuyển cho một Job cụ thể */
+    long countByJobId(Integer jobId);
+
     /**
      * Đếm application theo status, có thể scope theo người tạo job.
      * Dùng cho HR dashboard: chỉ đếm application thuộc job do HR này tạo.
