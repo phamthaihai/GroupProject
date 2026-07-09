@@ -6,6 +6,9 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.servlet.http.HttpSession;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import com.example.groupproject.dto.RegisterDTO;
 import com.example.groupproject.entity.User;
@@ -205,14 +208,14 @@ public class AuthService {
     public void requireAuthenticated(User user) {
         //Kiểm tra đã đăng nhập chưa
         if (user == null) {
-            throw new IllegalStateException("Authentication required");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not authenticated");
         }
     }
     public void requireRole(User user, UserRole role) {
         requireAuthenticated(user);
         //kiểm tra 1 role
         if (user.getRole() != role) {
-            throw new IllegalStateException("Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
     }
 
@@ -220,7 +223,7 @@ public class AuthService {
         requireAuthenticated(user);
         //kiểm tra nhiều role
         if (!hasAnyRole(user, roles)) {
-            throw new IllegalStateException("Access denied");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
     }
 

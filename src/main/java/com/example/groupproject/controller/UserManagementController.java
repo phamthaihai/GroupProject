@@ -33,76 +33,76 @@ public class UserManagementController {
         this.authService = authService;
     }
 
-//    @GetMapping
-//    public String listUsers(@RequestParam(required = false) String search,
-//                            @RequestParam(required = false) UserRole role,
-//                            @RequestParam(required = false) UserStatus status,
-//                            Model model,
-//                            HttpSession session) {
-//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-//        List<User> users = userManagementService.searchUsers(search, role, status);
-//        model.addAttribute("users", users);
-//        model.addAttribute("search", search);
-//        model.addAttribute("selectedRole", role);
-//        model.addAttribute("selectedStatus", status);
-//        model.addAttribute("roles", UserRole.values());
-//        model.addAttribute("statuses", UserStatus.values());
-//        model.addAttribute("createUserForm", new CreateUserForm());
-//        model.addAttribute("creatableRoles", List.of(UserRole.HR_MANAGER, UserRole.INTERVIEWER));
-//        addActionFlags(model, users);
-//        return "admin/users";
-//    }
-//
-//    @PostMapping
-//    public String createUser(@Valid @ModelAttribute("createUserForm") CreateUserForm form,
-//                             BindingResult bindingResult,
-//                             Model model,
-//                             RedirectAttributes redirectAttributes,
-//                             HttpSession session) {
-//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-//        if (bindingResult.hasErrors()) {
-//            populateListModel(model, null, null, null);
-//            return "admin/users";
-//        }
-//        try {
-//            User actor = authService.getCurrentUser(session);
-//            userManagementService.createUser(form, actor);
-//            redirectAttributes.addFlashAttribute("successMessage", "User created successfully");
-//        } catch (IllegalArgumentException ex) {
-//            bindingResult.reject("createUser", ex.getMessage());
-//            populateListModel(model, null, null, null);
-//            return "admin/users";
-//        }
-//        return "redirect:/admin/users";
-//    }
-//
-//    @PostMapping("/{id}/unlock")
-//    public String unlock(@PathVariable Integer id,
-//                         RedirectAttributes redirectAttributes,
-//                         HttpSession session) {
-//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-//        try {
-//            userManagementService.unlockUser(id, authService.getCurrentUser(session));
-//            redirectAttributes.addFlashAttribute("successMessage", "Account unlocked");
-//        } catch (Exception ex) {
-//            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-//        }
-//        return "redirect:/admin/users";
-//    }
-//
-//    @PostMapping("/{id}/deactivate")
-//    public String deactivate(@PathVariable Integer id,
-//                             RedirectAttributes redirectAttributes,
-//                             HttpSession session) {
-//        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
-//        try {
-//            userManagementService.deactivateUser(id, authService.getCurrentUser(session));
-//            redirectAttributes.addFlashAttribute("successMessage", "Account deactivated");
-//        } catch (Exception ex) {
-//            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
-//        }
-//        return "redirect:/admin/users";
-//    }
+    @GetMapping
+    public String listUsers(@RequestParam(required = false) String search,
+                            @RequestParam(required = false) UserRole role,
+                            @RequestParam(required = false) UserStatus status,
+                            Model model,
+                            HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+        List<User> users = userManagementService.searchUsers(search, role, status);
+        model.addAttribute("users", users);
+        model.addAttribute("search", search);
+        model.addAttribute("selectedRole", role);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("roles", UserRole.values());
+        model.addAttribute("statuses", UserStatus.values());
+        model.addAttribute("createUserForm", new CreateUserForm());
+        model.addAttribute("creatableRoles", List.of(UserRole.HR_MANAGER, UserRole.INTERVIEWER));
+        addActionFlags(model, users);
+        return "admin/users";
+    }
+
+    @PostMapping
+    public String createUser(@Valid @ModelAttribute("createUserForm") CreateUserForm form,
+                             BindingResult bindingResult,
+                             Model model,
+                             RedirectAttributes redirectAttributes,
+                             HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+        if (bindingResult.hasErrors()) {
+            populateListModel(model, null, null, null);
+            return "admin/users";
+        }
+        try {
+            User actor = authService.getCurrentUser(session);
+            userManagementService.createUser(form, actor);
+            redirectAttributes.addFlashAttribute("successMessage", "User created successfully");
+        } catch (IllegalArgumentException ex) {
+            bindingResult.reject("createUser", ex.getMessage());
+            populateListModel(model, null, null, null);
+            return "admin/users";
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/{id}/unlock")
+    public String unlock(@PathVariable Integer id,
+                         RedirectAttributes redirectAttributes,
+                         HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+        try {
+            userManagementService.unlockUser(id, authService.getCurrentUser(session));
+            redirectAttributes.addFlashAttribute("successMessage", "Account unlocked");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/{id}/deactivate")
+    public String deactivate(@PathVariable Integer id,
+                             RedirectAttributes redirectAttributes,
+                             HttpSession session) {
+        authService.requireRole(authService.getCurrentUser(session), UserRole.ADMIN);
+        try {
+            userManagementService.deactivateUser(id, authService.getCurrentUser(session));
+            redirectAttributes.addFlashAttribute("successMessage", "Account deactivated");
+        } catch (Exception ex) {
+            redirectAttributes.addFlashAttribute("errorMessage", ex.getMessage());
+        }
+        return "redirect:/admin/users";
+    }
 
     private void populateListModel(Model model, String search, UserRole role, UserStatus status) {
         List<User> users = userManagementService.searchUsers(search, role, status);
