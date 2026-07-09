@@ -14,24 +14,25 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.groupproject.dto.LoginDTO;
 import com.example.groupproject.entity.User;
-import com.example.groupproject.service.UserService;
 
 @Controller
 public class LoginController {
+    public static final String SESSION_USER_ID = "loggedInUserId";
 
     @Autowired
     private AuthService authService;
 
     @GetMapping("/login")
-    public String showFormLogin(@ModelAttribute("msg") String msg,
-                                @ModelAttribute("err") String err,
-                                Model model,
-                                HttpSession session) {
-
-        User currentUser = (User) session.getAttribute("user");
+    public String showFormLogin(
+            @ModelAttribute("msg") String msg,
+            @ModelAttribute("err") String err,
+            Model model,
+            HttpSession session
+    ) {
+        //Lấy user
+        User currentUser = authService.getCurrentUser(session);
 
         if (currentUser != null) {
-
             if (currentUser.getRole() == UserRole.ADMIN) {
                 return "redirect:/admin/dashboard";
             }
@@ -51,42 +52,47 @@ public class LoginController {
             model.addAttribute("error", err);
         }
 
-        return "login";
+        return "auth/login";
     }
 
     @PostMapping("/login")
-    public String loginUser(@Valid @ModelAttribute("loginDTO") LoginDTO loginDTO,
-                            BindingResult result,
-                            Model model,
-                            HttpSession session,
-                            RedirectAttributes ra) {
+    public String loginUser(
+            @Valid @ModelAttribute("loginDTO") LoginDTO loginDTO,
+            BindingResult result,
+            Model model,
+            HttpSession session,
+            RedirectAttributes ra
+    ) {
         if (result.hasErrors()) {
-            return "login";
+            return "auth/login";
         }
 
-        User user = authService.login(loginDTO);
+        try{
+            //kiểm tra thông tin đăng nhập
+            User user = authService.login(loginDTO,session);
 
-        if (user == null) {
-            model.addAttribute("error", "Email hoặc mật khẩu không đúng hoặc tài khoản chưa được kích hoạt");
-            return "login";
+            // Thông báo đăng nhập thành công
+            ra.addFlashAttribute("msg", "Đăng nhập thành công");
+
+            // Điều hướng theo role sau khi đăng nhập
+            if (user.getRole() != null && user.getRole() == UserRole.ADMIN) {
+                return "redirect:/admin/dashboard";
+            }
+
+            return "redirect:/profile";
+        }catch (Exception errorMessage){
+            model.addAttribute("error", errorMessage.getMessage());
+            return "auth/login";
         }
-
-        // Lưu user vào session
-        session.setAttribute("user", user);
-        ra.addFlashAttribute("msg", "Đăng nhập thành công");
-
-        // Điều hướng theo role sau khi đăng nhập
-        if (user.getRole() != null
-                && "ADMIN".equalsIgnoreCase(user.getRole().name())) {
-            return "redirect:/admin/dashboard";
-        }
-        return "redirect:/";
     }
 
-    @GetMapping("/logout")
-    public String logout(HttpSession session, RedirectAttributes ra) {
-        session.invalidate();
+    @PostMapping("/logout")
+    public String logout(
+            HttpSession session,
+            RedirectAttributes ra
+    ) {
         ra.addFlashAttribute("msg", "Bạn đã đăng xuất");
-        return "redirect:/";
+        authService.doLogout(session);
+        return "redirect:/login";
     }
 }

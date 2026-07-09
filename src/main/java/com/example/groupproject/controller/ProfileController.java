@@ -19,17 +19,15 @@ public class ProfileController {
         this.authService = authService;
     }
 
-//    @GetMapping("/profile")
-//    public String profile(Model model, HttpSession session) {
-//        User user = authService.getCurrentUser(session);
-//        authService.requireAuthenticated(user);
-//        model.addAttribute("user", user);
-//        return "profile";
-//    }
-//
-//    @GetMapping("/change-password")
-//    public String changePassword(HttpSession session) {
-//        authService.requireAuthenticated(authService.getCurrentUser(session));
-//        return "change-password";
-//    }
+    @GetMapping("/profile")
+    public String profile(Model model, HttpSession session) {
+        User user = authService.getCurrentUser(session);
+        //kiểm tra quyền truy cập
+        if(user == null){
+            return "redirect:/login";
+        }
+        model.addAttribute("user", user);
+        return "user/profile";
+    }
+
 }

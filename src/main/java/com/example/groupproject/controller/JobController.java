@@ -14,7 +14,7 @@ public class JobController {
 
     /** GET /jobs/new — hiển thị form tạo job mới */
     @GetMapping("/new")
-    public String createJob() {
+    public String showJobForm() {
         return "jobs/form";
     }
 }

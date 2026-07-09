@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 public class ResetPasswordController {
+
     @Autowired
     private AuthService authService;
     @Autowired
     private EmailService emailService;
+
     @GetMapping("/forgot-password")
     public String showForgotPassword(Model model){
         if(!model.containsAttribute("forgotPasswordDTO")){
@@ -25,16 +27,18 @@ public class ResetPasswordController {
                     new ForgotPasswordDTO()
             );
         }
-        return "forgot-password";
+        return "auth/forgot-password";
     }
+
     @PostMapping("/forgot-password")
     public String forgotPassword(
             @Valid @ModelAttribute("forgotPasswordDTO") ForgotPasswordDTO dto,
             BindingResult result,
             Model model,
-            RedirectAttributes ra){
+            RedirectAttributes ra
+    ){
         if(result.hasErrors()){
-            return "forgot-password";
+            return "auth/forgot-password";
         }
         try {
             String otp = authService.createResetPasswordOtp(dto);
@@ -43,25 +47,28 @@ public class ResetPasswordController {
             return "redirect:/reset-password";
         }catch(Exception e){
             model.addAttribute("error", e.getMessage());
-            return "forgot-password";
+            return "auth/forgot-password";
         }
     }
+
     @GetMapping("/reset-password")
     public String showResetPassword(Model model){
         if(!model.containsAttribute("resetPasswordDTO")){
             model.addAttribute("resetPasswordDTO", new ResetPasswordDTO());
         }
-        return "reset-password";
+        return "auth/reset-password";
     }
+
     @PostMapping("/reset-password")
     public String resetPassword(
             @Valid @ModelAttribute("resetPasswordDTO") ResetPasswordDTO dto,
             BindingResult result,
             Model model,
-            RedirectAttributes ra) {
+            RedirectAttributes ra
+    ) {
         if (result.hasErrors()) {
             model.addAttribute("resetPasswordDTO", dto);
-            return "reset-password";
+            return "auth/reset-password";
         }
 
         try {
@@ -71,7 +78,8 @@ public class ResetPasswordController {
         } catch (Exception e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("resetPasswordDTO", dto);
-            return "reset-password";
+            return "auth/reset-password";
         }
     }
+
 }
