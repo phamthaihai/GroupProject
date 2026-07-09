@@ -19,17 +19,19 @@ public class RegisterController {
         if(!model.containsAttribute("registerDTO")){
             model.addAttribute("registerDTO", new RegisterDTO());
         }
-        return "register";
+        return "auth/register";
     }
     @PostMapping("/register")
     public String register(
             @Valid @ModelAttribute("registerDTO") RegisterDTO dto,
             BindingResult result,
             Model model,
-            RedirectAttributes ra){
+            RedirectAttributes ra
+    ){
         if(result.hasErrors()){
-            return "register";
+            return "auth/register";
         }
+
         try {
             String baseUrl = ServletUriComponentsBuilder
                             .fromCurrentContextPath()
@@ -41,9 +43,10 @@ public class RegisterController {
         }catch(Exception e){
             model.addAttribute("err", e.getMessage()
             );
-            return "register";
+            return "auth/register";
         }
     }
+
     @GetMapping("/verify")
     public String verify(
             @RequestParam String token,

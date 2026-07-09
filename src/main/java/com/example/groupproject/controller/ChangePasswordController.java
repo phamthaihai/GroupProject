@@ -12,13 +12,16 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 @Controller
 public class ChangePasswordController {
+
     @Autowired
     private AuthService authService;
+
     @GetMapping("/change-password")
     public String showChangePassword(Model model){
         model.addAttribute("changePasswordDTO", new ChangePasswordDTO());
-        return "change-password";
+        return "auth/change-password";
     }
+
     @PostMapping("/change-password")
     public String changePassword(
             @Valid @ModelAttribute("changePasswordDTO") ChangePasswordDTO dto,
@@ -26,7 +29,7 @@ public class ChangePasswordController {
             Model model,
             HttpSession session){
         User user =
-                (User) session.getAttribute("user");
+                (User) authService.getCurrentUser(session);
         if(user == null){
             return "redirect:/login";
         }
@@ -34,7 +37,7 @@ public class ChangePasswordController {
             model.addAttribute("currentUser", user);
             model.addAttribute("activeTab", "password"
             );
-            return "profile";
+            return "user/profile";
         }
         try {
             authService.changePassword(
@@ -49,7 +52,7 @@ public class ChangePasswordController {
             model.addAttribute("currentUser", user);
             model.addAttribute("passwordError", e.getMessage());
             model.addAttribute("activeTab", "password");
-            return "profile";
+            return "user/profile";
         }
     }
 }
