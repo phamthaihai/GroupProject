@@ -17,25 +17,25 @@ public class GlobalModelAdvice {
         this.authService = authService;
     }
 
-//    @ModelAttribute("currentUser")
-//    public User currentUser(HttpSession session) {
-//        return authService.getCurrentUser(session);
-//    }
-//
-//    @ModelAttribute("isAuthenticated")
-//    public boolean isAuthenticated(HttpSession session) {
-//        return authService.isAuthenticated(session);
-//    }
-//
-//    @ModelAttribute("isAdmin")
-//    public boolean isAdmin(HttpSession session) {
-//        User user = authService.getCurrentUser(session);
-//        return authService.hasRole(user, UserRole.ADMIN);
-//    }
-//
-//    @ModelAttribute("canAccessHr")
-//    public boolean canAccessHr(HttpSession session) {
-//        User user = authService.getCurrentUser(session);
-//        return authService.hasAnyRole(user, UserRole.ADMIN, UserRole.HR_MANAGER);
-//    }
+    @ModelAttribute("currentUser")
+    public User currentUser(HttpSession session) {
+        return authService.getCurrentUser(session);
+    }
+
+    @ModelAttribute("isAuthenticated")
+    public boolean isAuthenticated(HttpSession session) {
+        return authService.getCurrentUser(session) != null;
+    }
+
+    @ModelAttribute("isAdmin")
+    public boolean isAdmin(HttpSession session) {
+        User user = authService.getCurrentUser(session);
+        return user != null && user.getRole() == UserRole.ADMIN;
+    }
+
+    @ModelAttribute("canAccessHr")
+    public boolean canAccessHr(HttpSession session) {
+        User user = authService.getCurrentUser(session);
+        return user != null && authService.hasAnyRole(user, UserRole.ADMIN, UserRole.HR_MANAGER);
+    }
 }

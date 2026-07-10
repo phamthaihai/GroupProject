@@ -22,14 +22,11 @@ public class ProfileController {
     @GetMapping("/profile")
     public String profile(Model model, HttpSession session) {
         User user = authService.getCurrentUser(session);
-        authService.requireAuthenticated(user);
+        //kiểm tra quyền truy cập
+        if(user == null){
+            return "redirect:/login";
+        }
         model.addAttribute("user", user);
-        return "profile";
+        return "user/profile";
     }
-//
-//    @GetMapping("/change-password")
-//    public String changePassword(HttpSession session) {
-//        authService.requireAuthenticated(authService.getCurrentUser(session));
-//        return "change-password";
-//    }
 }

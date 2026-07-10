@@ -20,37 +20,46 @@ public class AuthInterceptor implements HandlerInterceptor {
         this.authService = authService;
     }
 
-//    @Override
-//    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
-//            throws Exception {
-//        String path = request.getRequestURI();
-//        if (isPublicPath(path)) {
-//            return true;
-//        }
-//
-//        User user = authService.getCurrentUser(request.getSession(false));
-//        if (user == null) {
-//            response.sendRedirect("/login");
-//            return false;
-//        }
-//
-//        if (path.startsWith("/admin/") && user.getRole() != UserRole.ADMIN) {
-//            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-//            return false;
-//        }
-//
-//        if ((path.startsWith("/hr/") || path.startsWith("/jobs/"))
-//                && user.getRole() != UserRole.ADMIN
-//                && user.getRole() != UserRole.HR_MANAGER) {
-//            response.sendError(HttpServletResponse.SC_FORBIDDEN);
-//            return false;
-//        }
-//
-//        return true;
-//    }
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
+            throws Exception {
+        String path = request.getRequestURI();
+        //kiểm tra đường dẫn có phải là đường không thầm quyền
+        if (isPublicPath(path)) {
+            return true;
+        }
+        //Kiểm tra path bằng cách in ra
+        System.out.println("URI = " + request.getRequestURI());
+        System.out.println("Context = " + request.getContextPath());
+
+        User user = authService.getCurrentUser(request.getSession(false));
+        //Kiểm tra có người dùng đăng nhập
+        if (user == null) {
+            response.sendRedirect("/login");
+            return false;
+        }
+        //kiểm tra role của user đối với path
+        //FOR ADMIN ONLY PATH
+        if (path.startsWith("/admin/") && user.getRole() != UserRole.ADMIN) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        //FOR ADMIN & HR_MANAGER PATH
+        if ((path.startsWith("/hr/") || path.startsWith("/jobs/"))
+                && user.getRole() != UserRole.ADMIN
+                && user.getRole() != UserRole.HR_MANAGER) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+
+        return true;
+    }
 
     private boolean isPublicPath(String path) {
         return path.equals("/login")
+                || path.startsWith("/register")
+                || path.startsWith("/")
+                || path.startsWith("/logout")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
                 || path.equals("/error");
