@@ -352,3 +352,17 @@ COMMENT ON TABLE applications           IS 'SCR-14/15/16/17: candidate applicati
 COMMENT ON TABLE application_notes      IS 'SCR-17: internal HR notes. Immutable after creation. Hidden from Interviewers.';
 COMMENT ON TABLE interviews             IS 'SCR-18/19: interview assignments and evaluations. Multiple rounds allowed per application.';
 COMMENT ON TABLE activity_log           IS 'SCR-09: append-only audit log. Actor username snapshot preserved even after deactivation.';
+-- 1. Xóa bảng vật lý trống do Hibernate tự tạo
+DROP TABLE IF EXISTS v_activity_log_display CASCADE;
+
+-- 2. Tạo lại View liên kết động đúng chuẩn đặc tả
+CREATE VIEW v_activity_log_display AS
+SELECT
+    al.*,
+    CASE
+        WHEN u.status = 'INACTIVE' THEN al.actor_username || ' (deactivated)'
+        ELSE al.actor_username
+    END AS actor_display_name
+FROM activity_log al
+LEFT JOIN users u ON u.id = al.actor_id;
+

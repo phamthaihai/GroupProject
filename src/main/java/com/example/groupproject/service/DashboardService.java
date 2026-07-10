@@ -19,7 +19,13 @@ import com.example.groupproject.repository.JobPostingRepository;
 import com.example.groupproject.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import com.example.groupproject.entity.enums.ActivityEventType;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.List;
@@ -117,4 +123,18 @@ public class DashboardService {
         }
         return null;
     }
+    // Bên trong DashboardService:
+public Page<ActivityLogDisplayView> searchActivityLogs(
+        String search, ActivityEventType eventType, 
+        LocalDate dateFrom, LocalDate dateTo, int page) {
+    
+    // Chuyển LocalDate sang Instant để khớp kiểu dữ liệu db
+    Instant fromInstant = dateFrom != null ? dateFrom.atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
+    Instant toInstant = dateTo != null ? dateTo.plusDays(1).atStartOfDay(ZoneId.systemDefault()).toInstant() : null;
+    
+    // Tạo cấu hình phân trang: 50 phần tử trên 1 trang, sắp xếp theo thời gian giảm dần
+    Pageable pageable = PageRequest.of(page, 50, Sort.by("createdAt").descending());
+    
+    return activityLogDisplayViewRepository.searchLogs(eventType, search, fromInstant, toInstant, pageable);
+}
 }
