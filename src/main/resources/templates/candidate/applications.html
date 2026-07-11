@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('My Applications - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <!-- Success & Error Banners -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <div class="page-actions">
+            <div>
+                <h1>My Applications</h1>
+                <p class="subtitle">Track your submitted job applications and status updates</p>
+            </div>
+            <a th:href="@{/jobs}" class="btn btn-primary">Browse Jobs</a>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="tab-container">
+            <a th:href="@{/candidate/applications(status='ALL')}" 
+               th:classappend="${currentStatus == 'ALL' ? 'active' : ''}" class="tab-link">All</a>
+            <a th:href="@{/candidate/applications(status='APPLIED')}" 
+               th:classappend="${currentStatus == 'APPLIED' ? 'active' : ''}" class="tab-link">Applied</a>
+            <a th:href="@{/candidate/applications(status='SCREENING')}" 
+               th:classappend="${currentStatus == 'SCREENING' ? 'active' : ''}" class="tab-link">Screening</a>
+            <a th:href="@{/candidate/applications(status='INTERVIEW')}" 
+               th:classappend="${currentStatus == 'INTERVIEW' ? 'active' : ''}" class="tab-link">Interview</a>
+            <a th:href="@{/candidate/applications(status='OFFER')}" 
+               th:classappend="${currentStatus == 'OFFER' ? 'active' : ''}" class="tab-link">Offer</a>
+            <a th:href="@{/candidate/applications(status='HIRED')}" 
+               th:classappend="${currentStatus == 'HIRED' ? 'active' : ''}" class="tab-link">Hired</a>
+            <a th:href="@{/candidate/applications(status='REJECTED')}" 
+               th:classappend="${currentStatus == 'REJECTED' ? 'active' : ''}" class="tab-link">Rejected</a>
+            <a th:href="@{/candidate/applications(status='WITHDRAWN')}" 
+               th:classappend="${currentStatus == 'WITHDRAWN' ? 'active' : ''}" class="tab-link">Withdrawn</a>
+        </div>
+
+        <!-- Empty State (No applications at all) -->
+        <div th:if="${!hasApplications}" class="card empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+            <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">You haven't applied for any positions yet.</p>
+            <a th:href="@{/jobs}" class="btn btn-primary">Browse Open Positions</a>
+        </div>
+
+        <!-- Empty State (Filtered results empty) -->
+        <div th:if="${hasApplications && applications.isEmpty()}" class="card empty-state" style="text-align: center; padding: 2rem 1.5rem;">
+            <p>No applications matches the selected filter.</p>
+        </div>
+
+        <!-- Applications Table -->
+        <div class="card" th:if="${!applications.isEmpty()}" style="padding: 0; overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                <tr>
+                    <th>Job Title</th>
+                    <th>Department</th>
+                    <th>Submitted Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="app : ${applications}">
+                    <td>
+                        <a th:href="@{/jobs/{id}(id=${app.job.id})}" th:text="${app.job.title}" 
+                           style="color: var(--primary); font-weight: 600; text-decoration: none;">Software Engineer</a>
+                    </td>
+                    <td th:text="${app.job.department}">Engineering</td>
+                    <td th:text="${#temporals.format(app.submittedAt, 'dd MMM yyyy HH:mm')}">11 Jul 2026 09:00</td>
+                    <td>
+                        <span class="badge" 
+                              th:classappend="'badge-' + ${#strings.toLowerCase(app.status.name())}"
+                              th:text="${app.status.name()}">APPLIED</span>
+                    </td>
+                    <td>
+                        <form th:if="${app.status.name() == 'APPLIED' || app.status.name() == 'SCREENING'}"
+                              th:action="@{/candidate/applications/{id}/withdraw(id=${app.id})}" 
+                              method="post"
+                              style="display: inline;"
+                              onsubmit="return confirm('Are you sure you want to withdraw this application? This action cannot be undone.');">
+                            <button type="submit" class="btn btn-danger btn-sm">Withdraw</button>
+                        </form>
+                        <span th:if="${app.status.name() != 'APPLIED' && app.status.name() != 'SCREENING'}" style="color: var(--muted); font-size: 0.9rem;">—</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<style>
+    .tab-container {
+        display: flex;
+        gap: 0.35rem;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .tab-link {
+        text-decoration: none;
+        color: var(--muted);
+        padding: 0.45rem 0.9rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.15s, color 0.15s;
+    }
+    .tab-link:hover {
+        background: #ecf0f1;
+        color: var(--text);
+    }
+    .tab-link.active {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* Application status badges */
+    .badge-applied { background: #e8f4fd; color: #1a5276; }
+    .badge-screening { background: #fef9e7; color: #9a7d0a; }
+    .badge-interview { background: #f5eef8; color: #6c3483; }
+    .badge-offer { background: #e0f2f1; color: #00796b; }
+    .badge-hired { background: #eafaf1; color: #1e8449; }
+    .badge-rejected { background: #fde8e8; color: #922b21; }
+    .badge-withdrawn { background: #f2f3f4; color: #566573; }
+</style>
+</body>
+</html>

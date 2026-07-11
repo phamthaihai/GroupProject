@@ -62,4 +62,31 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             ORDER BY j.department ASC
             """)
     List<String> findDistinctDepartments(@Param("createdById") Integer createdById);
+
+    @Query("""
+            SELECT j FROM JobPosting j
+            WHERE j.status = :status
+              AND (:department IS NULL OR j.department = :department)
+              AND (:location IS NULL OR j.location = :location)
+            ORDER BY CASE WHEN j.applicationDeadline IS NULL THEN 1 ELSE 0 END,
+                     j.applicationDeadline ASC,
+                     j.title ASC
+            """)
+    List<JobPosting> findPublicActiveJobsFiltered(@Param("status") JobStatus status,
+                                                  @Param("department") String department,
+                                                  @Param("location") String location);
+
+    @Query("""
+            SELECT DISTINCT j.department FROM JobPosting j
+            WHERE j.status = :status
+            ORDER BY j.department ASC
+            """)
+    List<String> findDistinctDepartmentsByStatus(@Param("status") JobStatus status);
+
+    @Query("""
+            SELECT DISTINCT j.location FROM JobPosting j
+            WHERE j.status = :status
+            ORDER BY j.location ASC
+            """)
+    List<String> findDistinctLocationsByStatus(@Param("status") JobStatus status);
 }

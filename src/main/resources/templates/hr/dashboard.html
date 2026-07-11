@@ -41,7 +41,10 @@
                 </thead>
                 <tbody>
                 <tr th:each="job : ${activeJobs}">
-                    <td th:text="${job.title}">Software Engineer</td>
+                    <td>
+                        <a th:href="@{/hr/jobs/{id}/applications(id=${job.id})}" th:text="${job.title}" 
+                           style="color: var(--primary); font-weight: 600; text-decoration: none;">Software Engineer</a>
+                    </td>
                     <td th:text="${job.department}">Engineering</td>
                     <td th:text="${job.applicationCount}">5</td>
                     <td th:text="${job.deadline != null ? #temporals.format(job.deadline, 'dd MMM yyyy') : '—'}">—</td>

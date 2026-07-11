@@ -36,6 +36,9 @@ public class LoginController {
             if (currentUser.getRole() == UserRole.ADMIN) {
                 return "redirect:/admin/dashboard";
             }
+            if (currentUser.getRole() == UserRole.CANDIDATE) {
+                return "redirect:/candidate/applications";
+            }
             return "redirect:/";
         }
 
@@ -77,6 +80,9 @@ public class LoginController {
             // Điều hướng theo role sau khi đăng nhập
             if (user.getRole() != null && user.getRole() == UserRole.ADMIN) {
                 return "redirect:/admin/dashboard";
+            }
+            if (user.getRole() != null && user.getRole() == UserRole.CANDIDATE) {
+                return "redirect:/candidate/applications";
             }
 
             return "redirect:/profile";

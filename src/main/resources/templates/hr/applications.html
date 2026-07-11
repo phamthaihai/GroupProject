@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Job Applications - TalentHub')}"></head>
+<body>
+<!-- Include HTMX library for dynamic stage filtering without full page reload -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <!-- Breadcrumbs -->
+        <div style="margin-bottom: 1.5rem;">
+            <a th:href="@{/hr/dashboard}" style="color: var(--muted); text-decoration: none; font-size: 0.9rem;">&larr; Back to HR Dashboard</a>
+        </div>
+
+        <div class="page-actions" style="margin-bottom: 2rem;">
+            <div>
+                <h1 th:text="${job.title}">Software Engineer</h1>
+                <p class="subtitle" style="margin-bottom: 0;">
+                    Applications Pipeline &mdash; 
+                    <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(job.status.name())}" th:text="${job.status.name()}">ACTIVE</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Pipeline Stage Filter Tabs -->
+        <div class="tab-container">
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='ALL')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='ALL')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'ALL' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               All (<span th:text="${counts.ALL}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='APPLIED')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='APPLIED')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'APPLIED' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Applied (<span th:text="${counts.APPLIED}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='SCREENING')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='SCREENING')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'SCREENING' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Screening (<span th:text="${counts.SCREENING}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='INTERVIEW')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='INTERVIEW')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'INTERVIEW' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Interview (<span th:text="${counts.INTERVIEW}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='OFFER')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='OFFER')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'OFFER' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Offer (<span th:text="${counts.OFFER}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='HIRED')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='HIRED')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'HIRED' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Hired (<span th:text="${counts.HIRED}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='REJECTED')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='REJECTED')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'REJECTED' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Rejected (<span th:text="${counts.REJECTED}">0</span>)
+            </a>
+            <a th:href="@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='WITHDRAWN')}"
+               th:attr="hx-get=@{/hr/jobs/{jobId}/applications(jobId=${job.id}, status='WITHDRAWN')}"
+               hx-target="#applicant-list-container"
+               hx-swap="outerHTML"
+               th:classappend="${currentStatus == 'WITHDRAWN' ? 'active' : ''}"
+               class="tab-link hx-tab">
+               Withdrawn (<span th:text="${counts.WITHDRAWN}">0</span>)
+            </a>
+        </div>
+
+        <!-- Dynamic Applications Fragment Container -->
+        <div id="applicant-list-container" th:fragment="applicantList">
+            <!-- Empty state when no applications exist in selected tab -->
+            <div th:if="${applications.isEmpty()}" class="card empty-state" style="text-align: center; padding: 3rem 1.5rem;">
+                <p style="font-size: 1.1rem; color: var(--muted); margin-bottom: 0;">No candidates at this stage yet.</p>
+            </div>
+
+            <!-- Table of Applications -->
+            <div class="card" th:if="${!applications.isEmpty()}" style="padding: 0; overflow-x: auto;">
+                <table style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                    <tr>
+                        <th>Candidate Name</th>
+                        <th>Submission Date</th>
+                        <th>Days in Current Stage</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="app : ${applications}">
+                        <td th:text="${app.candidate.fullName}" style="font-weight: 600; color: var(--primary);">Nguyen Van A</td>
+                        <td th:text="${#temporals.format(app.submittedAt, 'dd MMM yyyy HH:mm')}">11 Jul 2026 09:00</td>
+                        <td th:text="${T(java.time.temporal.ChronoUnit).DAYS.between(app.statusChangedAt, T(java.time.Instant).now())}">5</td>
+                        <td>
+                            <span class="badge" th:classappend="'badge-' + ${#strings.toLowerCase(app.status.name())}" th:text="${app.status.name()}">APPLIED</span>
+                        </td>
+                        <td>
+                            <a th:href="@{/hr/applications/{id}(id=${app.id})}" class="btn btn-secondary btn-sm">Open</a>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Active tab highlight script (for htmx swaps) -->
+            <script>
+                document.querySelectorAll('.hx-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                const activeUrl = window.location.pathname + window.location.search;
+                document.querySelectorAll('.hx-tab').forEach(tab => {
+                    if (tab.getAttribute('href') === activeUrl) {
+                        tab.classList.add('active');
+                    }
+                });
+            </script>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<style>
+    .tab-container {
+        display: flex;
+        gap: 0.35rem;
+        border-bottom: 2px solid var(--border);
+        padding-bottom: 0.5rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+    .tab-link {
+        text-decoration: none;
+        color: var(--muted);
+        padding: 0.45rem 0.9rem;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        transition: background 0.15s, color 0.15s;
+    }
+    .tab-link:hover {
+        background: #ecf0f1;
+        color: var(--text);
+    }
+    .tab-link.active {
+        background: var(--primary);
+        color: #fff;
+    }
+
+    /* Active job badge styles */
+    .badge-draft { background: #f2f3f4; color: #566573; }
+    .badge-active { background: #eafaf1; color: #1e8449; }
+    .badge-closed { background: #fde8e8; color: #922b21; }
+
+    /* Application status badges */
+    .badge-applied { background: #e8f4fd; color: #1a5276; }
+    .badge-screening { background: #fef9e7; color: #9a7d0a; }
+    .badge-interview { background: #f5eef8; color: #6c3483; }
+    .badge-offer { background: #e0f2f1; color: #00796b; }
+    .badge-hired { background: #eafaf1; color: #1e8449; }
+    .badge-rejected { background: #fde8e8; color: #922b21; }
+    .badge-withdrawn { background: #f2f3f4; color: #566573; }
+</style>
+
+<!-- Update browser URL dynamically upon HTMX AJAX calls -->
+<script>
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail.xhr && evt.detail.xhr.responseURL) {
+            const responseURL = new URL(evt.detail.xhr.responseURL);
+            window.history.pushState({}, '', responseURL.pathname + responseURL.search);
+        }
+    });
+</script>
+</body>
+</html>

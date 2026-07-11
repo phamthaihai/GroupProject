@@ -44,6 +44,16 @@ public class AuthInterceptor implements HandlerInterceptor {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
+        // FOR CANDIDATE ONLY PATH
+        if (path.startsWith("/candidate/") && user.getRole() != UserRole.CANDIDATE) {
+            response.sendError(HttpServletResponse.SC_FORBIDDEN);
+            return false;
+        }
+        // FOR CANDIDATE APPLY PATH
+        if (path.matches("/jobs/\\d+/apply") && user.getRole() == UserRole.CANDIDATE) {
+            return true;
+        }
+
         //FOR ADMIN & HR_MANAGER PATH
         if ((path.startsWith("/hr/") || path.startsWith("/jobs/"))
                 && user.getRole() != UserRole.ADMIN
@@ -58,7 +68,10 @@ public class AuthInterceptor implements HandlerInterceptor {
     private boolean isPublicPath(String path) {
         return path.equals("/login")
                 || path.startsWith("/register")
-                || path.startsWith("/")
+                || path.equals("/")
+                || path.equals("/jobs")
+                || path.equals("/jobs/")
+                || path.matches("/jobs/\\d+")
                 || path.startsWith("/logout")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")

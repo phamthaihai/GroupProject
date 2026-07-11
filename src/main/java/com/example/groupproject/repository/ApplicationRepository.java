@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 /**
  * Repository cho entity Application.
  */
@@ -16,6 +18,14 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
 
     /** Đếm số lượng ứng tuyển cho một Job cụ thể */
     long countByJobId(Integer jobId);
+
+    boolean existsByJobIdAndCandidateId(Integer jobId, Integer candidateId);
+
+    List<Application> findByCandidateIdOrderBySubmittedAtDesc(Integer candidateId);
+
+    List<Application> findByJobIdOrderBySubmittedAtDesc(Integer jobId);
+
+    List<Application> findByJobIdAndStatusOrderBySubmittedAtDesc(Integer jobId, ApplicationStatus status);
 
     /**
      * Đếm application theo status, có thể scope theo người tạo job.

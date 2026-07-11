@@ -1,11 +1,16 @@
 package com.example.groupproject.controller;
 
 import com.example.groupproject.dto.JobListRow;
+import com.example.groupproject.dto.ApplicationForm;
 import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.JobStatus;
+import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.JobManagementService;
+import com.example.groupproject.service.JobService;
+import com.example.groupproject.service.ApplicationService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,23 +32,41 @@ public class JobController {
     private JobManagementService jobService;
     @Autowired
     private AuthService authService;
+    @Autowired
+    private JobService publicJobService;
+    @Autowired
+    private ApplicationService applicationService;
 
     @GetMapping({"", "/"})
     public String listJobs(
             @RequestParam(required = false) JobStatus status,
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) String department,
+            @RequestParam(required = false) String location,
             HttpSession session, Model model) {
             
         // 1. Lấy thông tin user đăng nhập hiện tại từ session
         User currentUser = authService.getCurrentUser(session);
         
-        // 2. Gọi Service lấy dữ liệu công việc và danh sách phòng ban làm filter dropdown
+        // 2. Nếu chưa đăng nhập hoặc là CANDIDATE, hiển thị public job list (SCR-13)
+        if (currentUser == null || currentUser.getRole() == UserRole.CANDIDATE) {
+            JobService.PublicJobListData data = publicJobService.getPublicJobList(department, location);
+            model.addAttribute("jobs", data.jobs());
+            model.addAttribute("departments", data.departments());
+            model.addAttribute("locations", data.locations());
+            model.addAttribute("selectedDepartment", data.selectedDepartment());
+            model.addAttribute("selectedLocation", data.selectedLocation());
+            model.addAttribute("hasActivePostings", data.hasActivePostings());
+            model.addAttribute("hasSelectedFilter", data.hasSelectedFilter());
+            return "jobs/public-list";
+        }
+        
+        // 3. Gọi Service lấy dữ liệu công việc và danh sách phòng ban làm filter dropdown cho ADMIN/HR
         List<JobListRow> jobs = jobService.getJobsForList(currentUser, status, keyword, department);
         List<String> departments = jobService.getDistinctDepartments(currentUser);
         Map<String, Long> counts = jobService.getJobCountsByStatus(currentUser);
 
-        // 3. Đẩy dữ liệu ra Model Thymeleaf
+        // 4. Đẩy dữ liệu ra Model Thymeleaf
         model.addAttribute("jobs", jobs);
         model.addAttribute("departments", departments);
         model.addAttribute("counts", counts);
@@ -88,5 +111,67 @@ public class JobController {
             ra.addFlashAttribute("errorMessage", e.getMessage());
         }
         return "redirect:/jobs";
+    }
+
+    @GetMapping("/{id}")
+    public String publicJobDetail(@PathVariable Integer id, HttpSession session, Model model) {
+        com.example.groupproject.entity.JobPosting job = publicJobService.getJobById(id);
+        if (job == null) {
+            return "redirect:/jobs";
+        }
+
+        User currentUser = authService.getCurrentUser(session);
+        boolean isGuest = (currentUser == null);
+        boolean isCandidate = (currentUser != null && currentUser.getRole() == UserRole.CANDIDATE);
+        boolean isClosed = (job.getStatus() != com.example.groupproject.entity.enums.JobStatus.ACTIVE);
+
+        // Draft postings are only visible to HR Managers/Admins
+        if (job.getStatus() == com.example.groupproject.entity.enums.JobStatus.DRAFT) {
+            boolean isStaff = (currentUser != null && (currentUser.getRole() == UserRole.HR_MANAGER || currentUser.getRole() == UserRole.ADMIN));
+            if (!isStaff) {
+                return "redirect:/jobs";
+            }
+        }
+
+        boolean hasApplied = false;
+        if (isCandidate) {
+            hasApplied = applicationService.hasApplied(id, currentUser.getId());
+        }
+
+        model.addAttribute("job", job);
+        model.addAttribute("isGuest", isGuest);
+        model.addAttribute("isCandidate", isCandidate);
+        model.addAttribute("isClosed", isClosed);
+        model.addAttribute("hasApplied", hasApplied);
+        model.addAttribute("applicationForm", new ApplicationForm());
+
+        return "jobs/public-detail";
+    }
+
+    @PostMapping("/{id}/apply")
+    public String applyJob(@PathVariable Integer id,
+                           @ModelAttribute("applicationForm") ApplicationForm form,
+                           HttpSession session,
+                           Model model,
+                           RedirectAttributes redirectAttributes) {
+        User currentUser = authService.getCurrentUser(session);
+        if (currentUser == null || currentUser.getRole() != UserRole.CANDIDATE) {
+            return "redirect:/login";
+        }
+
+        try {
+            applicationService.applyToJob(id, currentUser, form);
+            redirectAttributes.addFlashAttribute("successMessage", "Your application has been submitted successfully. Track its status in My Applications.");
+            return "redirect:/jobs/" + id;
+        } catch (Exception ex) {
+            com.example.groupproject.entity.JobPosting job = publicJobService.getJobById(id);
+            model.addAttribute("job", job);
+            model.addAttribute("isGuest", false);
+            model.addAttribute("isCandidate", true);
+            model.addAttribute("isClosed", job.getStatus() != com.example.groupproject.entity.enums.JobStatus.ACTIVE);
+            model.addAttribute("hasApplied", false);
+            model.addAttribute("errorMessage", ex.getMessage());
+            return "jobs/public-detail";
+        }
     }
 }

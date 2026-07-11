@@ -12,6 +12,7 @@
         <a th:href="@{/profile}" class="logo">TalentHub</a>
         <nav class="main-nav" th:if="${isAuthenticated}">
             <a th:href="@{/profile}">Profile</a>
+            <a th:href="@{/candidate/applications}" th:if="${currentUser != null && currentUser.role.name() == 'CANDIDATE'}">My Applications</a>
             <a th:href="@{/jobs}" th:if="${canAccessHr}">Job List</a>
             <a th:href="@{/hr/dashboard}" th:if="${canAccessHr}">HR Dashboard</a>
             <a th:href="@{/admin/dashboard}" th:if="${isAdmin}">Admin Dashboard</a>

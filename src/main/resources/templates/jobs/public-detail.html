@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head(${job.title} + ' - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container" style="max-width: 800px;">
+        <!-- Breadcrumb navigation -->
+        <div style="margin-bottom: 1.5rem;">
+            <a th:href="@{/jobs}" style="color: var(--muted); text-decoration: none; font-size: 0.9rem;">&larr; Back to Open Positions</a>
+        </div>
+
+        <!-- Success & Error Alert Banners -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <span th:text="${successMessage}"></span>
+            <a th:href="@{/candidate/applications}" style="color: var(--success); font-weight: 600; margin-left: 0.5rem;">My Applications</a>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <article class="card" style="padding: 2.5rem; margin-bottom: 2rem;">
+            <h1 th:text="${job.title}" style="color: var(--primary); font-size: 2.2rem; margin-bottom: 0.75rem;">Software Engineer</h1>
+            
+            <!-- Job Metadata -->
+            <div style="display: flex; gap: 1.5rem; color: var(--muted); font-size: 0.95rem; margin-bottom: 2rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem; flex-wrap: wrap;">
+                <div><strong>Department:</strong> <span th:text="${job.department}">Engineering</span></div>
+                <div><strong>Location:</strong> <span th:text="${job.location}">Ho Chi Minh City</span></div>
+                <div th:if="${job.salaryRange != null && !job.salaryRange.isEmpty()}">
+                    <strong>Salary:</strong> <span th:text="${job.salaryRange}">Negotiable</span>
+                </div>
+                <div th:if="${job.applicationDeadline != null}">
+                    <strong>Deadline:</strong> <span th:text="${#temporals.format(job.applicationDeadline, 'dd MMM yyyy')}">31 Jul 2026</span>
+                </div>
+            </div>
+
+            <!-- Job Description -->
+            <div style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 0.75rem; color: var(--primary);">Job Description</h3>
+                <div style="white-space: pre-line; color: var(--text);" th:text="${job.description}">Detailed job description goes here.</div>
+            </div>
+
+            <!-- Job Requirements -->
+            <div th:if="${job.requirements != null && !job.requirements.isEmpty()}" style="margin-bottom: 2rem;">
+                <h3 style="margin-bottom: 0.75rem; color: var(--primary);">Requirements</h3>
+                <div style="white-space: pre-line; color: var(--text);" th:text="${job.requirements}">Requirements detailed here.</div>
+            </div>
+        </article>
+
+        <!-- Application Area -->
+        <section class="card" style="padding: 2rem;">
+            <h2 style="margin-bottom: 1.5rem;">Apply for this Position</h2>
+
+            <!-- Notice: Position Closed (Job status is not ACTIVE) -->
+            <div th:if="${isClosed}" class="alert alert-error">
+                This position is no longer accepting applications.
+            </div>
+
+            <!-- If Position is Open (ACTIVE) -->
+            <div th:if="${!isClosed}">
+                <!-- Notice: Already Applied -->
+                <div th:if="${hasApplied}" class="alert alert-info">
+                    You have already applied for this position.
+                    <a th:href="@{/candidate/applications}" style="color: var(--primary); font-weight: 600; margin-left: 0.5rem;">Track its status in My Applications</a>
+                </div>
+
+                <!-- Case: Guest (Unauthenticated) -->
+                <div th:if="${isGuest}" class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                    <span>User Login or create an account to apply.</span>
+                    <div>
+                        <a th:href="@{/login}" class="btn btn-primary btn-sm">User Login</a>
+                        <a th:href="@{/register}" class="btn btn-secondary btn-sm" style="margin-left: 0.25rem;">Create Account</a>
+                    </div>
+                </div>
+
+                <!-- Case: Candidate not applied yet -->
+                <div th:if="${isCandidate && !hasApplied}">
+                    <form th:action="@{/jobs/{id}/apply(id=${job.id})}" th:object="${applicationForm}" method="post" enctype="multipart/form-data">
+                        <!-- Cover Letter -->
+                        <div class="form-group" style="margin-bottom: 1.25rem;">
+                            <label for="coverLetter">Cover Letter (Optional)</label>
+                            <textarea id="coverLetter" th:field="*{coverLetter}" rows="6" style="padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: 5px; font-size: 0.9rem; font-family: inherit; width: 100%; resize: vertical;" placeholder="Tell us why you are a great fit for this job..."></textarea>
+                        </div>
+
+                        <!-- CV Upload -->
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label>CV Upload (Required, PDF or DOCX only, max 5 MB)</label>
+                            
+                            <!-- Custom File Upload Area -->
+                            <div style="border: 2px dashed var(--border); border-radius: 6px; padding: 1.5rem; text-align: center; background: #fafbfc; position: relative;">
+                                <input type="file" id="cvFile" th:field="*{cvFile}" accept=".pdf,.docx" style="display: none;" onchange="updateFileLabel()" required/>
+                                <label for="cvFile" class="btn btn-secondary btn-sm" style="cursor: pointer; display: inline-block;">Choose File</label>
+                                <p style="font-size: 0.8rem; color: var(--muted); margin-top: 0.5rem; margin-bottom: 0;">Drag and drop or click to upload</p>
+                                
+                                <!-- File details panel -->
+                                <div id="file-info" style="display: none; align-items: center; justify-content: center; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.9rem; font-weight: 500;">
+                                    <span id="file-name" style="color: var(--primary);"></span>
+                                    <button type="button" class="btn btn-sm" style="background: none; color: var(--danger); font-size: 0.85rem; padding: 0.1rem 0.4rem; font-weight: bold;" onclick="removeFile()">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Application</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<script>
+    function updateFileLabel() {
+        const input = document.getElementById('cvFile');
+        const fileInfo = document.getElementById('file-info');
+        const fileName = document.getElementById('file-name');
+        if (input.files.length > 0) {
+            fileName.textContent = input.files[0].name;
+            fileInfo.style.display = 'flex';
+        } else {
+            fileInfo.style.display = 'none';
+        }
+    }
+
+    function removeFile() {
+        const input = document.getElementById('cvFile');
+        input.value = '';
+        updateFileLabel();
+    }
+</script>
+</body>
+</html>

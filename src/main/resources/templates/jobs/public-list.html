@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('Open Positions - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+<main>
+    <div class="container">
+        <h1>Open Positions</h1>
+
+        <!-- SCR-13: guest-only sign-in prompt banner. -->
+        <div th:if="${!isAuthenticated}" class="alert alert-info guest-banner">
+            <span>User Login or create an account to apply for positions.</span>
+            <span class="guest-banner-actions">
+                <a th:href="@{/login}" class="btn btn-primary btn-sm">User Login</a>
+                <a th:href="@{/register}" class="btn btn-secondary btn-sm">Create Account</a>
+            </span>
+        </div>
+
+        <!-- SCR-13: filters are populated from distinct ACTIVE job values. -->
+        <form th:action="@{/jobs}" method="get" class="filter-bar public-job-filters">
+            <label for="department">
+                Department
+                <select id="department" name="department">
+                    <option value="">All departments</option>
+                    <option th:each="departmentOption : ${departments}"
+                            th:value="${departmentOption}"
+                            th:text="${departmentOption}"
+                            th:selected="${departmentOption == selectedDepartment}">
+                        Engineering
+                    </option>
+                </select>
+            </label>
+            <label for="location">
+                Location
+                <select id="location" name="location">
+                    <option value="">All locations</option>
+                    <option th:each="locationOption : ${locations}"
+                            th:value="${locationOption}"
+                            th:text="${locationOption}"
+                            th:selected="${locationOption == selectedLocation}">
+                        Ho Chi Minh City
+                    </option>
+                </select>
+            </label>
+            <button type="submit" class="btn btn-primary">Filter</button>
+            <a th:href="@{/jobs}" class="btn btn-secondary" th:if="${hasSelectedFilter}">Clear</a>
+        </form>
+
+        <!-- SCR-13 empty state when no ACTIVE postings exist at all. -->
+        <div th:if="${!hasActivePostings}" class="card empty-state">
+            <p>There are currently no open positions. Please check back later.</p>
+        </div>
+
+        <!-- SCR-13 empty state when ACTIVE postings exist but filters return no cards. -->
+        <div th:if="${hasActivePostings && jobs.isEmpty()}" class="card empty-state">
+            <p>No open positions match your current filters.</p>
+        </div>
+
+        <!-- SCR-13: cards show only ACTIVE jobs returned by JobService. -->
+        <div th:if="${!jobs.isEmpty()}" class="job-card-grid">
+            <article class="card job-card" th:each="job : ${jobs}">
+                <div>
+                    <h2 th:text="${job.title}">Software Engineer</h2>
+                    <dl class="job-meta">
+                        <div>
+                            <dt>Department</dt>
+                            <dd th:text="${job.department}">Engineering</dd>
+                        </div>
+                        <div>
+                            <dt>Location</dt>
+                            <dd th:text="${job.location}">Ho Chi Minh City</dd>
+                        </div>
+                        <div th:if="${job.applicationDeadline != null}">
+                            <dt>Deadline</dt>
+                            <dd th:text="${#temporals.format(job.applicationDeadline, 'dd MMM yyyy')}">31 Jul 2026</dd>
+                        </div>
+                    </dl>
+                </div>
+                <a th:href="@{/jobs/{id}(id=${job.id})}" class="btn btn-primary">View Details</a>
+            </article>
+        </div>
+    </div>
+</main>
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
