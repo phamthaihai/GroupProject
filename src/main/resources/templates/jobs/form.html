@@ -1,18 +1,117 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head th:replace="~{fragments/layout :: head('Create Job - TalentHub')}"></head>
+<head th:replace="~{fragments/layout :: head(${mode == 'create' ? 'Create Job Posting' : 'Edit Job Posting'})}"></head>
 <body>
 <header th:replace="~{fragments/layout :: header}"></header>
+
 <main>
     <div class="container">
-        <h1>Create New Job</h1>
-        <p class="subtitle">SCR-11 &mdash; Job form (coming in next sprint)</p>
+        <div class="page-actions">
+            <div>
+                <h1 th:text="${mode == 'create' ? 'Create Job Posting' : 'Edit Job Posting'}">Create Job Posting</h1>
+                <p class="subtitle">SCR-11 &mdash; Job Posting Form</p>
+            </div>
+        </div>
+
+        <!-- Thông báo nếu job đã CLOSED -->
+        <div th:if="${job.status == 'CLOSED'}" class="alert alert-info" style="background: #e8f4fd; color: #1a5276; border: 1px solid #baddf9;">
+            Closed job postings cannot be edited.
+        </div>
+
         <div class="card">
-            <p>The job creation form will be available here.</p>
-            <a th:href="@{/hr/dashboard}" class="btn btn-secondary">Back to HR Dashboard</a>
+            <form th:action="@{/jobs/save}" th:object="${job}" method="post">
+                <input type="hidden" th:field="*{id}" />
+                <input type="hidden" th:field="*{status}" />
+
+                <div class="form-grid">
+                    <!-- Job Title -->
+                    <div class="form-group full-width">
+                        <label>Job Title *</label>
+                        <input type="text" th:field="*{title}"
+                               th:readonly="${job.status == 'CLOSED'}" required maxlength="200"/>
+                        <span th:if="${#fields.hasErrors('title')}" th:errors="*{title}" class="field-error"></span>
+                    </div>
+
+                    <!-- Department -->
+                    <div class="form-group">
+                        <label>Department *</label>
+                        <input type="text" th:field="*{department}"
+                               th:readonly="${job.status == 'CLOSED'}" required maxlength="100"/>
+                        <span th:if="${#fields.hasErrors('department')}" th:errors="*{department}" class="field-error"></span>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="form-group">
+                        <label>Location *</label>
+                        <input type="text" th:field="*{location}"
+                               th:readonly="${job.status == 'CLOSED'}" required maxlength="100"/>
+                        <span th:if="${#fields.hasErrors('location')}" th:errors="*{location}" class="field-error"></span>
+                    </div>
+
+                    <!-- Salary Range -->
+                    <div class="form-group">
+                        <label>Salary Range</label>
+                        <input type="text" th:field="*{salaryRange}"
+                               th:readonly="${job.status == 'CLOSED'}" maxlength="100" placeholder="e.g. 15–20M VND"/>
+                        <span th:if="${#fields.hasErrors('salaryRange')}" th:errors="*{salaryRange}" class="field-error"></span>
+                    </div>
+
+                    <!-- Deadline -->
+                    <div class="form-group">
+                        <label>Application Deadline</label>
+                        <input type="date" th:field="*{deadline}"
+                               th:readonly="${job.status == 'CLOSED'}"/>
+                        <span th:if="${#fields.hasErrors('deadline')}" th:errors="*{deadline}" class="field-error"></span>
+                    </div>
+
+                    <!-- Job Description -->
+                    <div class="form-group full-width">
+                        <label>Job Description *</label>
+                        <textarea th:field="*{description}" rows="6"
+                                  th:readonly="${job.status == 'CLOSED'}" required style="padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: 5px; font-size: 0.9rem; font-family: inherit; resize: vertical;"></textarea>
+                        <span th:if="${#fields.hasErrors('description')}" th:errors="*{description}" class="field-error"></span>
+                    </div>
+
+                    <!-- Requirements -->
+                    <div class="form-group full-width">
+                        <label>Requirements</label>
+                        <textarea th:field="*{requirements}" rows="6"
+                                  th:readonly="${job.status == 'CLOSED'}" style="padding: 0.5rem 0.65rem; border: 1px solid var(--border); border-radius: 5px; font-size: 0.9rem; font-family: inherit; resize: vertical;"></textarea>
+                        <span th:if="${#fields.hasErrors('requirements')}" th:errors="*{requirements}" class="field-error"></span>
+                    </div>
+                </div>
+
+                <!-- Nút hành động -->
+                <div class="btn-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); justify-content: flex-end;">
+                    <!-- Nút Cancel -->
+                    <a th:href="${mode == 'create' ? '/jobs' : '/jobs/detail/' + job.id}"
+                       class="btn btn-secondary">Cancel</a>
+
+                    <!-- Nhóm nút lưu (ẩn nếu CLOSED) -->
+                    <th:block th:if="${job.status != 'CLOSED'}">
+                        <!-- Nút Save as Draft (Chỉ hiển thị khi tạo mới hoặc đang là DRAFT) -->
+                        <button th:if="${job.status == 'DRAFT' || mode == 'create'}" type="submit" name="action" value="saveDraft" class="btn btn-primary">
+                            Save as Draft
+                        </button>
+
+                        <!-- Nút Publish (Chỉ hiển thị nếu DRAFT VÀ Edit mode) -->
+                        <button th:if="${job.status == 'DRAFT' && mode == 'edit'}" type="submit" name="action" value="publish"
+                                class="btn btn-warning" onclick="return confirm('Are you sure you want to publish this job?');">
+                            Publish
+                        </button>
+
+                        <!-- Nút Save Changes (Chỉ hiển thị nếu ACTIVE khi Edit) -->
+                        <button th:if="${job.status == 'ACTIVE' && mode == 'edit'}" type="submit" name="action" value="saveChanges"
+                                class="btn btn-primary">
+                            Save Changes
+                        </button>
+                    </th:block>
+                </div>
+            </form>
         </div>
     </div>
 </main>
+
 <footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>

@@ -31,4 +31,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
             """)
     long countByStatusScoped(@Param("status") ApplicationStatus status,
                              @Param("createdById") Integer createdById);
+
+    /** Lấy tất cả hồ sơ ứng tuyển của một công việc cụ thể */
+    java.util.List<Application> findByJobId(Integer jobId);
 }
