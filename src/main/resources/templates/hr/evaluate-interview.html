@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Đánh giá phỏng vấn</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow-sm" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Đánh giá ứng viên</h4>
+        </div>
+        <div class="card-body">
+            <div class="mb-4 bg-light p-3 rounded">
+                <p><strong>Ứng viên:</strong> <span th:text="${interview.application.candidate.fullName}"></span></p>
+                <p><strong>Vị trí:</strong> <span th:text="${interview.application.job.title}"></span></p>
+                <p><strong>Thời gian:</strong> <span th:text="${interview.interviewDate + ' ' + interview.interviewTime}"></span></p>
+            </div>
+
+            <form th:action="@{/interview/evaluate}" method="post">
+                <input type="hidden" name="interviewId" th:value="${interview.id}">
+
+                <div class="form-group">
+                    <label><strong>Chấm điểm (1-5 sao):</strong></label>
+                    <div class="star-rating">
+                        <select name="rating" class="form-control" th:disabled="${isEvaluated}" required>
+                            <option value="5">5 sao</option>
+                            <option value="4">4 sao</option>
+                            <option value="3">3 sao</option>
+                            <option value="2">2 sao</option>
+                            <option value="1">1 sao</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label><strong>Viết nhận xét:</strong></label>
+                    <textarea name="feedback" class="form-control" rows="4"
+                              th:text="${isEvaluated ? interview.feedback : ''}"
+                              th:readonly="${isEvaluated}" required></textarea>
+                </div>
+
+                <div th:if="${!isEvaluated}" class="alert alert-warning">
+                    <small>Cảnh báo: Sau khi gửi, đánh giá này không thể chỉnh sửa.</small>
+                </div>
+
+                <div class="text-right">
+                    <a th:href="@{'/applications/' + ${interview.application.id}}" class="btn btn-secondary">Quay lại</a>
+                    <button type="submit" class="btn btn-primary" th:if="${!isEvaluated}">Gửi đánh giá</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

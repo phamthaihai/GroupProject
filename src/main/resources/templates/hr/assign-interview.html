@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<h1>Schedule Interview</h1>
+<h3>Candidate: <span th:text="${app.candidate.fullName}"></span> | Job: <span th:text="${app.job.title}"></span></h3>
+<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+
+<form th:action="@{/interview/assign}" th:object="${assignment}" method="post">
+    <input type="hidden" th:field="*{applicationId}" />
+
+    <label>Interviewer:</label>
+    <select th:field="*{interviewerId}" th:disabled="${#lists.isEmpty(interviewers)}">
+        <option th:each="i : ${interviewers}" th:value="${i.id}" th:text="${i.fullName}"></option>
+    </select>
+
+    <label>Date:</label>
+    <input type="date" th:field="*{interviewDate}" required />
+
+    <label>Time (HH:mm):</label>
+    <input type="text" th:field="*{interviewTime}" placeholder="14:30" required />
+
+    <label>Location/Link:</label>
+    <input type="text" th:field="*{locationOrLink}" />
+
+    <button type="submit" th:disabled="${#lists.isEmpty(interviewers)}">Assign and Schedule</button>
+    <a th:href="@{'/applications/' + ${app.id}}">Cancel</a>
+</form>
+</body>
+</html>

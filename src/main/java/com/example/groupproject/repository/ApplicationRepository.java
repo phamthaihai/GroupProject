@@ -5,6 +5,8 @@ import com.example.groupproject.entity.enums.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import java.util.Optional;
+import java.util.List;
 
 import java.util.List;
 
@@ -41,4 +43,15 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
             """)
     long countByStatusScoped(@Param("status") ApplicationStatus status,
                              @Param("createdById") Integer createdById);
+    // Thêm đoạn này vào ApplicationRepository
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate JOIN FETCH a.job WHERE a.id = :id")
+    Optional<Application> findByIdWithDetails(@Param("id") Integer id);
+    // Thêm hàm này vào ApplicationRepository
+    @Query("SELECT a.status, COUNT(a) FROM Application a WHERE a.job.id = :jobId GROUP BY a.status")
+    List<Object[]> countApplicationsByStatusAndJobId(@Param("jobId") Integer jobId);
+    // Thêm dòng này để Controller không bị đỏ nữa
+    @Query("SELECT a FROM Application a JOIN FETCH a.candidate WHERE a.job.id = :jobId")
+    List<Application> findByJobId(@Param("jobId") Integer jobId);
+    // Trong file ApplicationRepository.java
+    Optional<Application> findByCandidateId(Integer candidateId);
 }

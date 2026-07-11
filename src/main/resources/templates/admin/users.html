@@ -118,6 +118,11 @@
                     </td>
                     <td th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}">date</td>
                     <td class="actions-cell">
+                        <a th:if="${u.role.name() == 'CANDIDATE'}"
+                           th:href="@{/applications/user/{userId}(userId=${u.id})}"
+                           class="btn btn-secondary btn-sm"
+                           style="margin-bottom: 5px; display: block; width: 100%; text-align: center;">Details</a>
+
                         <form th:if="${canUnlock[u.id]}"
                               th:action="@{/admin/users/{id}/unlock(id=${u.id})}" method="post">
                             <button type="submit" class="btn btn-warning btn-sm">Unlock</button>
