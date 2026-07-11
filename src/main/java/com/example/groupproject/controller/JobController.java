@@ -1,7 +1,9 @@
 package com.example.groupproject.controller;
 
+import com.example.groupproject.dto.JobFormDTO;
 import com.example.groupproject.dto.JobListRow;
 import com.example.groupproject.dto.ApplicationForm;
+import com.example.groupproject.entity.JobPosting;
 import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.JobStatus;
 import com.example.groupproject.entity.enums.UserRole;
@@ -14,6 +16,7 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
@@ -28,14 +31,21 @@ import java.util.Map;
 @RequestMapping("/jobs")
 public class JobController {
 
-    @Autowired
-    private JobManagementService jobService;
-    @Autowired
-    private AuthService authService;
+    private final JobManagementService jobService;
+    private final AuthService authService;
+
+   // @Autowired
+    //private JobManagementService jobService;
+   // @Autowired
+    //private AuthService authService;
     @Autowired
     private JobService publicJobService;
     @Autowired
     private ApplicationService applicationService;
+    public JobController(JobManagementService jobService, AuthService authService) {
+        this.jobService = jobService;
+        this.authService = authService;
+    }
 
     @GetMapping({"", "/"})
     public String listJobs(

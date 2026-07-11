@@ -42,18 +42,19 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
 
 
     // Truy vấn danh sách công việc lọc theo điều kiện và scope người tạo
-    @Query("""
-            SELECT j FROM JobPosting j
-            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
-              AND (:status IS NULL OR j.status = :status)
-              AND (:keyword IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', :keyword, '%')))
-              AND (:department IS NULL OR j.department = :department)
-            ORDER BY j.updatedAt DESC
-            """)
-    List<JobPosting> findJobsForList(@Param("createdById") Integer createdById,
-                                     @Param("status") JobStatus status,
-                                     @Param("keyword") String keyword,
-                                     @Param("department") String department);
+    // CODE MỚI (Đã sửa lỗi)
+    @Query("SELECT j FROM JobPosting j WHERE " +
+            "(:createdById IS NULL OR j.createdBy.id = :createdById) AND " +
+            "(:status IS NULL OR j.status = :status) AND " +
+            "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', CAST(:title AS string), '%'))) AND " +
+            "(:department IS NULL OR j.department = :department) " +
+            "ORDER BY j.updatedAt DESC")
+    List<JobPosting> searchJobs(
+            @Param("createdById") Integer createdById, // Kiểu Integer khớp với Service và User
+            @Param("status") JobStatus status,      // Hoặc String tùy entity của bạn
+            @Param("title") String title,
+            @Param("department") String department
+    );
 
     // 2. Lấy danh sách các phòng ban không trùng lặp để đưa vào dropdown filter
     @Query("""

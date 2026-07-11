@@ -10,7 +10,7 @@ import com.example.groupproject.repository.JobPostingRepository;
 import com.example.groupproject.repository.ActivityLogRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import java.util.List;
 import java.util.List;
 
 @Service
@@ -106,7 +106,7 @@ public class ApplicationService {
         }
 
         if ("ALL".equalsIgnoreCase(status)) {
-            return applicationRepository.findByJobIdOrderBySubmittedAtDesc(jobId);
+            return applicationRepository.findByJobId(jobId);
         } else {
             ApplicationStatus appStatus = ApplicationStatus.valueOf(status.toUpperCase());
             return applicationRepository.findByJobIdAndStatusOrderBySubmittedAtDesc(jobId, appStatus);
@@ -115,7 +115,7 @@ public class ApplicationService {
 
     public java.util.Map<String, Long> getApplicationCountsByStage(Integer jobId) {
         java.util.Map<String, Long> counts = new java.util.HashMap<>();
-        List<Application> allApps = applicationRepository.findByJobIdOrderBySubmittedAtDesc(jobId);
+        List<Application> allApps = applicationRepository.findByJobId(jobId);
 
         counts.put("ALL", (long) allApps.size());
         for (ApplicationStatus status : ApplicationStatus.values()) {
