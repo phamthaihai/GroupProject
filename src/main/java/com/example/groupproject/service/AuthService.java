@@ -2,11 +2,11 @@ package com.example.groupproject.service;
 import com.example.groupproject.dto.ForgotPasswordDTO;
 import com.example.groupproject.dto.LoginDTO;
 import com.example.groupproject.dto.ResetPasswordDTO;
+import com.example.groupproject.exception.AdminLockedException;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import jakarta.servlet.http.HttpSession;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -15,6 +15,7 @@ import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
 import com.example.groupproject.repository.UserRepository;
+import com.example.groupproject.exception.AccountLockedException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -42,7 +43,7 @@ public class AuthService {
     public void register(RegisterDTO dto, String baseUrl) {
         String email = dto.getEmail().trim().toLowerCase();
         if(userRepo.existsByEmail(email)){
-            throw new IllegalArgumentException("Email already exists");
+            throw new IllegalArgumentException("This email address is already registered");
         }
         String token = UUID.randomUUID().toString().replace("-", "");
         User user = new User();
@@ -67,39 +68,52 @@ public class AuthService {
     }
 
     @Transactional
-    public User login(LoginDTO loginDTO, HttpSession session) throws IllegalArgumentException{
-
+    public User login(LoginDTO loginDTO, HttpSession session) {
         if (loginDTO == null ||
-            loginDTO.getEmail() == null ||
-            loginDTO.getEmail().isBlank() ||
-            loginDTO.getPassword() == null ||
-            loginDTO.getPassword().isBlank()) {
-            throw new IllegalArgumentException("Thông tin được điền vào không hợp lệ!");
+                loginDTO.getEmail() == null || loginDTO.getEmail().isBlank() ||
+                loginDTO.getPassword() == null || loginDTO.getPassword().isBlank()) {
+            throw new IllegalArgumentException("Thông tin điền vào không hợp lệ!");
         }
 
-        String email = loginDTO.getEmail()
-                .trim()
-                .toLowerCase();
-        Optional<User> optionalUser = userRepository.findByEmailIgnoreCase(email);
-        if (optionalUser.isEmpty()) {
-            throw new IllegalArgumentException("Email không tồn tại!");
+        String email = loginDTO.getEmail().trim().toLowerCase();
+        User user = userRepo.findByEmailIgnoreCase(email)
+                .orElseThrow(() -> new IllegalArgumentException("Incorrect username or password!"));
+
+        if (user.getStatus() == UserStatus.LOCKED) {
+            throw new AdminLockedException("Tài khoản đã bị quản trị viên khóa vĩnh viễn.");
         }
 
-        User user = optionalUser.get();
-
-        //kiểm tra xem tài khoản có bị khoá hay không
-        if(user.getLockedAt()!=null)
-            throw new IllegalArgumentException("Tài khoản đang bị khoá, vui lòng liên hệ đến trung tâm hỗ trợ người dùng!");
-
-        if (!matchesPassword(loginDTO.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Mật khẩu sai, vui lòng nhập lại!");
+        if (user.getLockedAt() != null && !user.isLoginLocked()) {
+            user.setFailedLoginCount((short) 0);
+            user.setLockedAt(null);
+            userRepo.save(user);
         }
 
-        if (user.getStatus() != UserStatus.ACTIVE) {
-            throw new IllegalArgumentException("Tài khoản chưa được kích hoạt, vui lòng kiểm tra lại email!");
+        if (user.isLoginLocked()) {
+            throw new AccountLockedException("Your account has\n" +
+                    "been temporarily locked after too many failed attempts.\n" +
+                    "Try again in 10 minutes or contact your administrator");
         }
 
-        //Lưu session bằng id, Bào mật + dữ liệu luôn mới.
+        if (!encoder.matches(loginDTO.getPassword(), user.getPasswordHash())) {
+            int newFailedCount = user.getFailedLoginCount() + 1;
+            user.setFailedLoginCount((short) newFailedCount);
+            if (newFailedCount >= 5) {
+                user.setLockedAt(Instant.now());
+                userRepo.save(user);
+                throw new AccountLockedException("Your account has\n" +
+                        "been temporarily locked after too many failed attempts.\n" +
+                        "Try again in 10 minutes or contact your administrator");
+            }
+
+            userRepo.save(user);
+            throw new IllegalArgumentException("Incorrect username or password!");
+        }
+
+        user.setFailedLoginCount((short) 0);
+        user.setLockedAt(null);
+        userRepo.save(user);
+
         session.setAttribute(SESSION_USER_ID, user.getId());
         return user;
     }
@@ -126,17 +140,20 @@ public class AuthService {
 
     @Transactional
     public String createResetPasswordOtp(ForgotPasswordDTO dto) {
-
         String email = dto.getEmail().trim().toLowerCase();
 
-        User user = userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new RuntimeException("Email not found"));
-        String otp = String.format("%06d", (int) (Math.random() * 1000000));
-        user.setVerifyToken(otp);
-        user.setVerifyTokenExpiresAt(LocalDateTime.now().plusMinutes(10));
-        userRepository.save(user);
-        return otp;
-    }
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(email);
 
+        if (userOptional.isPresent()) {
+            String otp = String.format("%06d", (int) (Math.random() * 1000000));
+            User user = userOptional.get();
+            user.setVerifyToken(otp);
+            user.setVerifyTokenExpiresAt(LocalDateTime.now().plusMinutes(10));
+            userRepository.save(user);
+            return otp;
+        }
+        return "NOT_FOUND";
+    }
     @Transactional
     public void resetPassword(ResetPasswordDTO dto) {
 
@@ -178,10 +195,13 @@ public class AuthService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         if (!matchesPassword(oldPassword, user.getPasswordHash())) {
-            throw new RuntimeException("Wrong password");
+            throw new RuntimeException("Incorrect current password.");
+        }
+        if (matchesPassword(newPassword, user.getPasswordHash())) {
+            throw new RuntimeException("New password must be different from your current password.");
         }
         if (!newPassword.equals(confirmPassword)) {
-            throw new RuntimeException("Password not match");
+            throw new RuntimeException("Passwords do not match.");
         }
         user.setPasswordHash(encodePassword(newPassword));
         userRepository.save(user);

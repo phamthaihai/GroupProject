@@ -12,8 +12,8 @@ public class EmailService {
         this.mailSender = mailSender;
     }
     public void sendEmail(String to,
-            String subject,
-            String text) {
+                          String subject,
+                          String text) {
         SimpleMailMessage message =
                 new SimpleMailMessage();
         message.setFrom(fromEmail);
@@ -40,9 +40,9 @@ public class EmailService {
     }
     public void sendResetPasswordEmail(String to, String otp) {
         sendEmail(to, "Reset password OTP", "Your OTP is: "
-                        + otp
-                        + "\n\n"
-                        + "OTP expires in 10 minutes."
+                + otp
+                + "\n\n"
+                + "OTP expires in 10 minutes."
         );
     }
 }

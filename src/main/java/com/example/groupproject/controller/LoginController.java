@@ -1,6 +1,8 @@
 package com.example.groupproject.controller;
 
 import com.example.groupproject.entity.enums.UserRole;
+import com.example.groupproject.exception.AccountLockedException;
+import com.example.groupproject.exception.AdminLockedException;
 import com.example.groupproject.service.AuthService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -29,7 +31,6 @@ public class LoginController {
             Model model,
             HttpSession session
     ) {
-        //Lấy user
         User currentUser = authService.getCurrentUser(session);
 
         if (currentUser != null) {
@@ -37,6 +38,12 @@ public class LoginController {
                 return "redirect:/admin/dashboard";
             }
             if (currentUser.getRole() == UserRole.CANDIDATE) {
+                return "redirect:/candidate/applications";
+            }
+            if (currentUser.getRole() == UserRole.HR_MANAGER) {
+                return "redirect:/hr/dashboard";
+            }
+            if (currentUser.getRole() == UserRole.INTERVIEWER) {
                 return "redirect:/candidate/applications";
             }
             return "redirect:/";
@@ -70,25 +77,42 @@ public class LoginController {
             return "auth/login";
         }
 
-        try{
-            //kiểm tra thông tin đăng nhập
-            User user = authService.login(loginDTO,session);
+        try {
+            User user = authService.login(loginDTO, session);
 
-            // Thông báo đăng nhập thành công
             ra.addFlashAttribute("msg", "Đăng nhập thành công");
 
-            // Điều hướng theo role sau khi đăng nhập
-            if (user.getRole() != null && user.getRole() == UserRole.ADMIN) {
-                return "redirect:/admin/dashboard";
+            if (user.getRole() != null) {
+                switch (user.getRole()) {
+                    case ADMIN:
+                        return "redirect:/admin/dashboard"; // SCR-07
+                    case HR_MANAGER:
+                        return "redirect:/hr/dashboard";    // SCR-06
+                    case INTERVIEWER:
+                        return "redirect:/interviewer/applications"; // SCR-17 (Sửa lại route của bạn nếu cần)
+                    case CANDIDATE:
+                        return "redirect:/candidate/applications";   // SCR-15
+                    default:
+                        break;
+                }
             }
-            if (user.getRole() != null && user.getRole() == UserRole.CANDIDATE) {
-                return "redirect:/candidate/applications";
-            }
-
             return "redirect:/profile";
-        }catch (Exception errorMessage){
-            model.addAttribute("error", errorMessage.getMessage());
-            return "auth/login";
+
+        } catch (AdminLockedException e) {
+            // HƯỚNG 1: Admin khóa -> Sang trang HTML thông báo riêng biệt
+            return "auth/admin-locked-page";
+
+        } catch (AccountLockedException e) {
+            // HƯỚNG 2a: Sai quá 5 lần -> Về lại trang login kèm param hiển thị Lockout Banner
+            return "redirect:/login?error=locked";
+
+        } catch (IllegalArgumentException e) {
+            // HƯỚNG 2b: Sai pass/email thông thường -> Về lại trang login kèm param hiển thị Generic Banner
+            return "redirect:/login?error=generic";
+
+        } catch (Exception e) {
+            // Dự phòng các lỗi hệ thống không lường trước khác
+            return "redirect:/login?error=generic";
         }
     }
 

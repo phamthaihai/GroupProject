@@ -59,6 +59,17 @@ public class User {
         this.createdAt = now;
         this.updatedAt = now;
     }
+    public boolean isLoginLocked() {
+        if (this.lockedAt == null) {
+            return false;
+        }
+        return this.lockedAt.plus(java.time.Duration.ofMinutes(10)).isAfter(java.time.Instant.now());
+    }
+
+    public void resetLoginAttempts() {
+        this.failedLoginCount = 0;
+        this.lockedAt = null;
+    }
 
     @PreUpdate
     protected void onUpdate() {

@@ -17,7 +17,10 @@ public class ChangePasswordController {
     private AuthService authService;
 
     @GetMapping("/change-password")
-    public String showChangePassword(Model model){
+    public String showChangePassword(Model model, HttpSession session){
+        if (authService.getCurrentUser(session) == null) {
+            return "redirect:/login";
+        }
         model.addAttribute("changePasswordDTO", new ChangePasswordDTO());
         return "auth/change-password";
     }
@@ -27,18 +30,16 @@ public class ChangePasswordController {
             @Valid @ModelAttribute("changePasswordDTO") ChangePasswordDTO dto,
             BindingResult result,
             Model model,
-            HttpSession session){
-        User user =
-                (User) authService.getCurrentUser(session);
-        if(user == null){
+            HttpSession session) {
+
+        User user = (User) authService.getCurrentUser(session);
+        if (user == null) {
             return "redirect:/login";
         }
-        if(result.hasErrors()){
-            model.addAttribute("currentUser", user);
-            model.addAttribute("activeTab", "password"
-            );
-            return "user/profile";
+        if (result.hasErrors()) {
+            return "auth/change-password";
         }
+
         try {
             authService.changePassword(
                     user.getId(),
@@ -48,11 +49,24 @@ public class ChangePasswordController {
             );
             session.invalidate();
             return "redirect:/login";
-        }catch(Exception e){
-            model.addAttribute("currentUser", user);
-            model.addAttribute("passwordError", e.getMessage());
-            model.addAttribute("activeTab", "password");
-            return "user/profile";
+
+        } catch (Exception e) {
+            String errorMsg = e.getMessage();
+
+            if (errorMsg.contains("Incorrect current password")) {
+                result.rejectValue("oldPassword", "error.oldPassword", errorMsg);
+            }
+            else if (errorMsg.contains("different from your current password")) {
+                result.rejectValue("newPassword", "error.newPassword", errorMsg);
+            }
+            else if (errorMsg.contains("do not match")) {
+                result.rejectValue("confirmPassword", "error.confirmPassword", errorMsg);
+            }
+            else {
+                model.addAttribute("passwordError", errorMsg);
+            }
+
+            return "auth/change-password";
         }
     }
 }

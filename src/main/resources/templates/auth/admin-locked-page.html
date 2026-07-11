@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Suspended - TalentHub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 flex items-center justify-center min-h-screen p-4">
+
+<div class="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-center transition-all transform hover:scale-[1.01]">
+
+    <div class="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-red-50 text-red-500 mb-6 animate-pulse">
+        <svg class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+    </div>
+
+    <h1 class="text-2xl font-bold text-slate-800 tracking-tight mb-3">
+        Tài khoản đã bị tạm ngưng
+    </h1>
+
+    <p class="text-slate-500 text-sm leading-relaxed mb-8">
+        Hệ thống nhận thấy tài khoản của bạn đã bị <span class="font-semibold text-slate-700">Quản trị viên (Admin)</span> khóa hoặc vô hiệu hóa do vi phạm chính sách hoặc lý do bảo mật hệ thống. Bạn không thể tự mở khóa luồng này.
+    </p>
+
+    <div class="bg-slate-50 border border-slate-100 rounded-xl p-4 text-left mb-8">
+        <div class="flex items-start space-x-3">
+            <svg class="h-5 w-5 text-slate-400 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 111.084 1.085l-.042.022m-.745 2.25l.06.022m0 0a.75.75 0 101.06-1.06l-.06-.022M12 18.75a6.75 6.75 0 120-13.5 6.75 6.75 0 020 13.5z" />
+            </svg>
+            <div>
+                <h4 class="text-xs font-semibold text-slate-700 uppercase tracking-wider">Hành động cần làm:</h4>
+                <p class="text-xs text-slate-500 mt-1">
+                    Vui lòng liên hệ trực tiếp với bộ phận nhân sự (HR) hoặc gửi email đến ban quản trị TalentHub để được hỗ trợ kiểm tra và khôi phục.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-3">
+        <a href="mailto:support@talenthub.com?subject=Yêu cầu mở khóa tài khoản"
+           class="inline-flex items-center justify-center w-full px-5 py-3 text-sm font-semibold text-white bg-red-500 hover:bg-red-600 active:bg-red-700 rounded-xl transition-colors duration-200 shadow-md shadow-red-100">
+            <svg class="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25H4.5A2.25 2.25 0 012.25 17.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5H4.5a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.92V6.75" />
+            </svg>
+            Liên hệ hỗ trợ qua Email
+        </a>
+
+        <a th:href="@{/login}" href="/login"
+           class="inline-flex items-center justify-center w-full px-5 py-3 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 rounded-xl transition-colors duration-200">
+            Quay lại trang Đăng nhập
+        </a>
+    </div>
+
+    <p class="text-slate-400 text-[11px] mt-8">
+        &copy; 2026 TalentHub Core System. All rights reserved.
+    </p>
+</div>
+
+</body>
+</html>

@@ -3,7 +3,6 @@ import com.example.groupproject.dto.ForgotPasswordDTO;
 import com.example.groupproject.dto.ResetPasswordDTO;
 import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.EmailService;
-import com.example.groupproject.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -42,11 +41,14 @@ public class ResetPasswordController {
         }
         try {
             String otp = authService.createResetPasswordOtp(dto);
-            emailService.sendResetPasswordEmail(dto.getEmail(), otp);
+            if (otp != null && !otp.equals("NOT_FOUND")) {
+                emailService.sendResetPasswordEmail(dto.getEmail(), otp);
+            }
             ra.addFlashAttribute("msg", "OTP has been sent to your email");
             return "redirect:/reset-password";
-        }catch(Exception e){
-            model.addAttribute("error", e.getMessage());
+
+        } catch(Exception e){
+            model.addAttribute("error", "An unexpected error occurred. Please try again.");
             return "auth/forgot-password";
         }
     }
@@ -81,5 +83,4 @@ public class ResetPasswordController {
             return "auth/reset-password";
         }
     }
-
 }

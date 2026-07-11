@@ -72,6 +72,8 @@ public class AuthInterceptor implements HandlerInterceptor {
                 || path.equals("/jobs")
                 || path.equals("/jobs/")
                 || path.matches("/jobs/\\d+")
+                || path.equals("/forgot-password")
+                || path.equals("/reset-password")
                 || path.startsWith("/logout")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")
