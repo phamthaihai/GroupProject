@@ -20,17 +20,20 @@ import java.util.stream.Collectors;
 @Transactional
 public class JobManagementService {
 
-    @Autowired
-    private JobPostingRepository jobRepo;
+    private final JobPostingRepository jobRepo;
+    private final ApplicationRepository appRepo; // Dùng để đếm số lượng application ứng tuyển
 
     @Autowired
-    private ApplicationRepository appRepo; // Dùng để đếm số lượng application ứng tuyển
+    public JobManagementService(JobPostingRepository jobRepo, ApplicationRepository appRepo) {
+        this.jobRepo = jobRepo;
+        this.appRepo = appRepo;
+    }
 
     public List<JobListRow> getJobsForList(User currentUser, JobStatus status, String keyword, String department) {
         // 1. Phân quyền: Nếu là HR_MANAGER thì chỉ lấy job của họ, ADMIN thì lấy hết (truyền createdById = null)
         Integer createdById = (currentUser.getRole() == UserRole.ADMIN) ? null : currentUser.getId();
 
-        List<JobPosting> postings = jobRepo.findJobsForList(createdById, status, keyword, department);
+        List<JobPosting> postings = jobRepo.searchJobs(createdById, status, keyword, department);
 
         // 2. Map sang DTO JobListRow và đếm số lượng apply
         return postings.stream().map(post -> {
@@ -71,6 +74,44 @@ public class JobManagementService {
         counts.put("CLOSED", closedCount);
 
         return counts;
+    }
+
+    public JobPosting getJobById(Integer id, User user) {
+        JobPosting job = jobRepo.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Job posting not found: " + id));
+        if (user.getRole() != UserRole.ADMIN && !job.getCreatedBy().getId().equals(user.getId())) {
+            throw new IllegalStateException("You are not authorized to view this job posting.");
+        }
+        return job;
+    }
+
+    public JobPosting saveJob(com.example.groupproject.dto.JobFormDTO jobForm, User user) {
+        JobPosting job;
+        if (jobForm.getId() != null) {
+            job = getJobById(jobForm.getId().intValue(), user);
+            if (job.getStatus() == JobStatus.CLOSED) {
+                throw new IllegalStateException("Closed job postings cannot be edited.");
+            }
+        } else {
+            job = new JobPosting();
+            job.setCreatedBy(user);
+        }
+
+        job.setTitle(jobForm.getTitle());
+        job.setDepartment(jobForm.getDepartment());
+        job.setLocation(jobForm.getLocation());
+        job.setDescription(jobForm.getDescription());
+        job.setRequirements(jobForm.getRequirements());
+        job.setSalaryRange(jobForm.getSalaryRange());
+        job.setApplicationDeadline(jobForm.getDeadline());
+        
+        if (jobForm.getStatus() != null) {
+            job.setStatus(JobStatus.valueOf(jobForm.getStatus()));
+        } else if (job.getId() == null) {
+            job.setStatus(JobStatus.DRAFT);
+        }
+
+        return jobRepo.save(job);
     }
 
     // Viết thêm các phương thức thay đổi trạng thái:
@@ -121,12 +162,17 @@ public class JobManagementService {
             throw new IllegalStateException("Only DRAFT job postings can be deleted.");
         }
 
-        // Nhớ check điều kiện: Phải chưa có ai ứng tuyển (applicationCount == 0) mới được xóa!
         long appCount = appRepo.countByJobId(jobId);
         if (appCount > 0) {
             throw new IllegalStateException("Cannot delete job posting because it has active applications.");
         }
 
         jobRepo.delete(job);
+    }
+
+    public List<com.example.groupproject.entity.Application> getApplicationsForJob(Integer jobId, User user) {
+        // Kiểm tra quyền xem job trước
+        JobPosting job = getJobById(jobId, user);
+        return appRepo.findByJobId(job.getId());
     }
 }

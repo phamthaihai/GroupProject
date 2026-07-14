@@ -61,4 +61,6 @@ public interface UserRepository extends JpaRepository<User, Integer> {
     Optional<User> findByEmailIgnoreCase(String email);
 
     List<User> findByEmailContainingIgnoreCaseOrFullNameContainingIgnoreCase(String email, String fullName);
+    /** Tìm tất cả user là INTERVIEWER và đang ACTIVE để làm dropdown */
+    List<User> findByRoleAndStatusOrderByFullNameAsc(UserRole role, UserStatus status);
 }

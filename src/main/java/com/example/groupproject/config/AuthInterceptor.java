@@ -25,6 +25,7 @@ public class AuthInterceptor implements HandlerInterceptor {
             throws Exception {
         String path = request.getRequestURI();
         //kiểm tra đường dẫn có phải là đường không thầm quyền
+        System.out.println("LOG: Đang truy cập path: " + path);
         if (isPublicPath(path)) {
             return true;
         }
@@ -35,6 +36,7 @@ public class AuthInterceptor implements HandlerInterceptor {
         User user = authService.getCurrentUser(request.getSession(false));
         //Kiểm tra có người dùng đăng nhập
         if (user == null) {
+            System.out.println("LOG: User null -> Redirect về /login");
             response.sendRedirect("/login");
             return false;
         }
@@ -61,7 +63,20 @@ public class AuthInterceptor implements HandlerInterceptor {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
             return false;
         }
+        // --- CHÈN ĐOẠN NÀY VÀO TRƯỚC LỆNH "return true;" CUỐI CÙNG ---
 
+        // Cho phép truy cập vào các đường dẫn ứng viên (SCR-17)
+        if (path.startsWith("/applications/")) {
+            // Chỉ ADMIN, HR_MANAGER, INTERVIEWER mới được xem
+            if (user.getRole() == UserRole.ADMIN ||
+                    user.getRole() == UserRole.HR_MANAGER ||
+                    user.getRole() == UserRole.INTERVIEWER) {
+                return true;
+            } else {
+                response.sendError(HttpServletResponse.SC_FORBIDDEN); // Báo lỗi quyền truy cập
+                return false;
+            }
+        }
         return true;
     }
 
@@ -69,11 +84,14 @@ public class AuthInterceptor implements HandlerInterceptor {
         return path.equals("/login")
                 || path.startsWith("/register")
                 || path.equals("/")
+
                 || path.equals("/jobs")
                 || path.equals("/jobs/")
                 || path.matches("/jobs/\\d+")
                 || path.equals("/forgot-password")
                 || path.equals("/reset-password")
+
+
                 || path.startsWith("/logout")
                 || path.startsWith("/css/")
                 || path.startsWith("/js/")

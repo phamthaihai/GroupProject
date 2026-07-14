@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Job Detail - TalentHub')}"></head>
+<body>
+<header th:replace="~{fragments/layout :: header}"></header>
+
+<main>
+    <div class="container">
+        <!-- Notification Banners -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-error" th:text="${errorMessage}"></div>
+
+        <div class="page-actions">
+            <div>
+                <h1 th:text="${job.title}">Job Title</h1>
+                <p class="subtitle">
+                    <span class="badge" th:classappend="${job.status.name() == 'ACTIVE'} ? 'badge-active' : (${job.status.name() == 'DRAFT'} ? 'badge-draft' : 'badge-closed')"
+                          th:text="${job.status}">STATUS</span>
+                    &mdash; Created on <span th:text="${#temporals.format(job.createdAt, 'dd MMM yyyy')}">Date</span>
+                </p>
+            </div>
+            <div class="btn-group" style="margin-top: 0;">
+                <a th:href="@{/jobs}" class="btn btn-secondary">Back to Jobs</a>
+                
+                <a th:if="${job.status.name() == 'DRAFT' || job.status.name() == 'ACTIVE'}" 
+                   th:href="@{/jobs/edit/{id}(id=${job.id})}" 
+                   class="btn btn-primary">Edit Job</a>
+                   
+                <form th:if="${job.status.name() == 'DRAFT'}" th:action="@{/jobs/{id}/publish(id=${job.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-warning" onclick="return confirm('Are you sure you want to publish this job?');">Publish</button>
+                </form>
+                
+                <form th:if="${job.status.name() == 'ACTIVE'}" th:action="@{/jobs/{id}/close(id=${job.id})}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary" onclick="return confirm('Are you sure you want to close this job?');">Close Job</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="form-grid">
+            <!-- Job Info Section -->
+            <div class="card" style="margin-bottom: 0;">
+                <h2>Job Information</h2>
+                <dl class="profile-grid">
+                    <dt>Department</dt>
+                    <dd th:text="${job.department}">Department Name</dd>
+                    
+                    <dt>Location</dt>
+                    <dd th:text="${job.location}">Location Name</dd>
+                    
+                    <dt>Salary Range</dt>
+                    <dd th:text="${job.salaryRange != null && !job.salaryRange.isEmpty() ? job.salaryRange : 'Not specified'}">Salary Range</dd>
+                    
+                    <dt>Deadline</dt>
+                    <dd th:text="${job.applicationDeadline != null ? #temporals.format(job.applicationDeadline, 'dd MMM yyyy') : 'No deadline'}">Deadline</dd>
+                </dl>
+
+                <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1rem; color: var(--primary);">Description</h3>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid var(--border); white-space: pre-line;" th:text="${job.description}">
+                    Description text
+                </div>
+                
+                <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem; font-size: 1rem; color: var(--primary);">Requirements</h3>
+                <div style="background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid var(--border); white-space: pre-line;" th:text="${job.requirements != null && !job.requirements.isEmpty() ? job.requirements : 'None'}">
+                    Requirements text
+                </div>
+            </div>
+
+            <!-- Applications Section -->
+            <div class="card" style="margin-bottom: 0;">
+                <h2>Candidates (<span th:text="${applications.size()}">0</span>)</h2>
+                
+                <div th:if="${applications.isEmpty()}" style="text-align: center; padding: 2rem 1rem; color: var(--muted);">
+                    No candidates have applied for this job yet.
+                </div>
+                
+                <div style="overflow-x: auto;" th:if="${!applications.isEmpty()}">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Candidate Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Applied On</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="app : ${applications}">
+                                <td>
+                                    <div style="font-weight: 600; color: var(--primary);" th:text="${app.candidate.fullName}">Name</div>
+                                </td>
+                                <td><a th:href="'mailto:' + ${app.candidate.email}" th:text="${app.candidate.email}">Email</a></td>
+                                <td>
+                                    <span class="badge" th:text="${app.status}"
+                                          th:classappend="${app.status.name() == 'HIRED'} ? 'badge-active' : (${app.status.name() == 'REJECTED'} ? 'badge-admin' : 'badge-hr_manager')">
+                                    </span>
+                                </td>
+                                <td th:text="${#temporals.format(app.submittedAt, 'dd MMM yyyy')}">Date</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

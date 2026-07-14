@@ -14,8 +14,12 @@
             <div>
                 <h1>Jobs Management</h1>
                 <p class="subtitle">SCR-10 &mdash; Manage your recruitment postings</p>
+                <div style="margin-top: 10px;">
+                    <a th:href="@{/interviews}" class="btn btn-outline-info btn-sm">View Interviews</a>
+                    <a th:href="@{/hr/report/1}" class="btn btn-outline-success btn-sm" style="margin-left: 5px;">Pipeline Report</a>
+                </div>
             </div>
-            <a th:href="@{/jobs/new}" class="btn btn-primary">Create New Job</a>
+            <a th:href="@{/jobs/create}" class="btn btn-primary">Create New Job</a>
         </div>
 
         <!-- Status Filter Tabs -->
@@ -102,7 +106,7 @@
                     <div class="job-card-actions">
                         <!-- Edit Button -->
                         <a th:if="${job.status.name() == 'DRAFT' || job.status.name() == 'ACTIVE'}" 
-                           th:href="@{/jobs/{id}/edit(id=${job.id})}" 
+                           th:href="@{/jobs/edit/{id}(id=${job.id})}" 
                            class="btn btn-secondary btn-sm">Edit</a>
                            
                         <!-- Publish Button -->
@@ -136,7 +140,7 @@
         <!-- Empty State -->
         <div class="card" th:if="${jobs.isEmpty()}" style="text-align: center; padding: 3rem 1.5rem;">
             <p style="color: var(--muted); font-size: 1.1rem; margin-bottom: 1.5rem;">No job postings match your current filters.</p>
-            <a th:href="@{/jobs/new}" class="btn btn-primary">Create Your First Job</a>
+            <a th:href="@{/jobs/create}" class="btn btn-primary">Create Your First Job</a>
         </div>
     </div>
 </main>

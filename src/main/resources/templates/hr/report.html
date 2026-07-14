@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Pipeline Report</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+<div class="container mt-5">
+    <h3>Pipeline Report</h3>
+    <hr>
+
+    <div class="row mb-4">
+        <div th:each="item : ${statusCounts}" class="col-md-2">
+            <div class="card text-center p-3 shadow-sm">
+                <h6 class="text-muted" th:text="${item[0]}">Trạng thái</h6>
+                <h4 class="font-weight-bold" th:text="${item[1]}">0</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th>Tên ứng viên</th>
+                    <th>Trạng thái</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="app : ${applications}">
+                    <td th:text="${app.candidate.fullName}"></td>
+                    <td><span class="badge badge-info" th:text="${app.status}"></span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <a href="/hr/dashboard" class="btn btn-secondary">Quay lại Dashboard</a>
+    </div>
+</div>
+</body>
+</html>
