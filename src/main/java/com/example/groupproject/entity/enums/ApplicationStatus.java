@@ -9,6 +9,7 @@ public enum ApplicationStatus {
     APPLIED,
     SCREENING,
     INTERVIEW,
+    EVALUATED,
     OFFER,
     HIRED,
     REJECTED,

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Chi tiết đơn ứng tuyển</title>
+    <!-- Thêm link Bootstrap để dùng được các class đẹp -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <div class="card shadow-sm" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Thông tin đơn ứng tuyển</h4>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between">
+                    <span><strong>ID đơn:</strong></span>
+                    <span th:text="${appDetail.applicationId}"></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span><strong>Ứng viên:</strong></span>
+                    <span th:text="${appDetail.candidateName}"></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span><strong>Email:</strong></span>
+                    <span th:text="${appDetail.candidateEmail}"></span>
+                </li>
+                <li class="list-group-item d-flex justify-content-between">
+                    <span><strong>Trạng thái:</strong></span>
+                    <span class="badge badge-info p-2" th:text="${appDetail.status}"></span>
+                </li>
+            </ul>
+        </div>
+        <div class="card-footer text-right">
+            <a href="javascript:history.back()" class="btn btn-secondary">Quay lại</a>
+            <a th:if="${appDetail.status == 'INTERVIEW'}"
+               th:href="@{'/interview/evaluate/' + ${appDetail.applicationId}}"
+               class="btn btn-success">Đánh giá ứng viên</a>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
