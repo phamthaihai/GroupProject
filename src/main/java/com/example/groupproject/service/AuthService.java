@@ -24,17 +24,16 @@ import java.util.UUID;
 public class AuthService {
     public static final String SESSION_USER_ID = "loggedInUserId";
 
-    private final UserRepository userRepo;
     @Autowired
     private  BCryptPasswordEncoder encoder;
     private final EmailService emailService;
     @Autowired
     private UserRepository userRepository;
 
-    public AuthService(UserRepository userRepo,
+    public AuthService(UserRepository userRepository,
                        BCryptPasswordEncoder encoder,
                        EmailService emailService) {
-        this.userRepo = userRepo;
+        this.userRepository = userRepository;
         this.encoder = encoder;
         this.emailService = emailService;
     }
@@ -42,7 +41,7 @@ public class AuthService {
     @Transactional
     public void register(RegisterDTO dto, String baseUrl) {
         String email = dto.getEmail().trim().toLowerCase();
-        if(userRepo.existsByEmail(email)){
+        if(userRepository.existsByEmail(email)){
             throw new IllegalArgumentException("This email address is already registered");
         }
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -57,7 +56,7 @@ public class AuthService {
         user.setVerifyToken(token);
         user.setVerifyTokenExpiresAt(LocalDateTime.now().plusMinutes(30));
         user.setUpdatedAt(Instant.now());
-        userRepo.save(user);
+        userRepository.save(user);
         String verifyLink =
                 baseUrl + "/verify?token=" + token;
         emailService.sendVerificationEmail(
@@ -76,7 +75,7 @@ public class AuthService {
         }
 
         String email = loginDTO.getEmail().trim().toLowerCase();
-        User user = userRepo.findByEmailIgnoreCase(email)
+        User user = userRepository.findByEmailIgnoreCase(email)
                 .orElseThrow(() -> new IllegalArgumentException("Incorrect username or password!"));
 
         if (user.getStatus() == UserStatus.LOCKED) {
@@ -86,7 +85,10 @@ public class AuthService {
         if (user.getLockedAt() != null && !user.isLoginLocked()) {
             user.setFailedLoginCount((short) 0);
             user.setLockedAt(null);
-            userRepo.save(user);
+            userRepository.save(user);
+        }
+        if(user.getStatus().equals(UserStatus.INACTIVE)){
+            throw new IllegalStateException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra gmail.");
         }
 
         if (user.isLoginLocked()) {
@@ -100,19 +102,19 @@ public class AuthService {
             user.setFailedLoginCount((short) newFailedCount);
             if (newFailedCount >= 5) {
                 user.setLockedAt(Instant.now());
-                userRepo.save(user);
+                userRepository.save(user);
                 throw new AccountLockedException("Your account has\n" +
                         "been temporarily locked after too many failed attempts.\n" +
                         "Try again in 10 minutes or contact your administrator");
             }
 
-            userRepo.save(user);
+            userRepository.save(user);
             throw new IllegalArgumentException("Incorrect username or password!");
         }
 
         user.setFailedLoginCount((short) 0);
         user.setLockedAt(null);
-        userRepo.save(user);
+        userRepository.save(user);
 
         session.setAttribute(SESSION_USER_ID, user.getId());
         return user;
@@ -175,19 +177,19 @@ public class AuthService {
     @Transactional
     public void verifyEmail(String token){
         User user =
-                userRepo.findByVerifyToken(token).orElseThrow(
+                userRepository.findByVerifyToken(token).orElseThrow(
                         () -> new IllegalArgumentException("Invalid verification token"));
         if(user.getVerifyTokenExpiresAt() == null || user.getVerifyTokenExpiresAt()
                 .isBefore(LocalDateTime.now())){
             throw new IllegalArgumentException("Token expired");
         }
+        System.out.println("Đang verify cho user: " + user.getEmail());
         user.setEmailVerified(true);
-        user.setStatus(UserStatus.ACTIVE
-        );
+        user.setStatus(UserStatus.ACTIVE);
         user.setVerifyToken(null);
         user.setVerifyTokenExpiresAt(null);
         user.setUpdatedAt(Instant.now());
-        userRepo.save(user);
+        userRepository.saveAndFlush(user);
     }
 
     @Transactional

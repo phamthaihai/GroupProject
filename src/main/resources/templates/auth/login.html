@@ -148,6 +148,10 @@
          class="alert-banner error-banner">
         Your account has been temporarily locked after too many failed attempts. Try again in 10 minutes or contact your administrator.
     </div>
+    <div th:if="${param.error != null && param.error[0] == 'status'}"
+        class="alert-banner error-banner">
+        Account not yet activated. Please check your Gmail.
+    </div>
 
     <div th:if="${error}" class="alert-banner error-banner" th:text="${error}"></div>
 
