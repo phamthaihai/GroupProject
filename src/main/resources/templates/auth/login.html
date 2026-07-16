@@ -155,7 +155,7 @@
 
     <form th:action="@{/login}" th:object="${loginDTO}" method="post">
         <div class="row">
-            <label>Username or email</label>
+            <label>Email</label>
             <input type="email" th:field="*{email}" required>
             <div class="error" th:errors="*{email}"></div>
         </div>
