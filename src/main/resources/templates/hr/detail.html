@@ -33,9 +33,15 @@
             </ul>
         </div>
         <div class="card-footer text-right">
-            <a href="javascript:history.back()" class="btn btn-secondary">Quay lại</a>
-            <a th:if="${appDetail.status == 'INTERVIEW'}"
-               th:href="@{'/interview/evaluate/' + ${appDetail.applicationId}}"
+            <!-- Nút Quay lại luôn đưa về trang User Management (SCR-08) -->
+            <a th:href="@{/admin/users}" class="btn btn-secondary">Quay lại</a>
+
+            <!-- Nút Gán lịch phỏng vấn (SCR-18) luôn hiển thị -->
+            <a th:href="@{'/interview/assign/' + ${appDetail.applicationId}}"
+               class="btn btn-primary">Gán lịch phỏng vấn</a>
+
+            <!-- Nút Đánh giá ứng viên (SCR-19) luôn hiển thị -->
+            <a th:href="@{'/interview/evaluate/' + ${appDetail.applicationId}}"
                class="btn btn-success">Đánh giá ứng viên</a>
         </div>
     </div>

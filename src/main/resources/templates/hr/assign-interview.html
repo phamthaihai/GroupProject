@@ -1,29 +1,58 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<body>
-<h1>Schedule Interview</h1>
-<h3>Candidate: <span th:text="${app.candidate.fullName}"></span> | Job: <span th:text="${app.job.title}"></span></h3>
-<div th:if="${error}" style="color: red;" th:text="${error}"></div>
+<head>
+    <title>Gán lịch phỏng vấn</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+</head>
+<body class="bg-light">
 
-<form th:action="@{/interview/assign}" th:object="${assignment}" method="post">
-    <input type="hidden" th:field="*{applicationId}" />
+<div class="container mt-5">
+    <div class="card shadow-sm" style="max-width: 600px; margin: auto;">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Gán lịch phỏng vấn</h4>
+        </div>
+        <div class="card-body">
+            <!-- Thông tin tóm tắt tương tự SCR-17 -->
+            <div class="mb-3">
+                <p><strong>Ứng viên:</strong> <span th:text="${app.candidate.fullName}"></span></p>
+                <p><strong>Công việc:</strong> <span th:text="${app.job.title}"></span></p>
+            </div>
+            <hr>
 
-    <label>Interviewer:</label>
-    <select th:field="*{interviewerId}" th:disabled="${#lists.isEmpty(interviewers)}">
-        <option th:each="i : ${interviewers}" th:value="${i.id}" th:text="${i.fullName}"></option>
-    </select>
+            <form th:action="@{/interview/assign}" th:object="${assignment}" method="post">
+                <input type="hidden" th:field="*{applicationId}" />
 
-    <label>Date:</label>
-    <input type="date" th:field="*{interviewDate}" required />
+                <div class="form-group">
+                    <label>Người phỏng vấn:</label>
+                    <select th:field="*{interviewerId}" class="form-control" th:disabled="${#lists.isEmpty(interviewers)}">
+                        <option th:each="i : ${interviewers}" th:value="${i.id}" th:text="${i.fullName}"></option>
+                    </select>
+                </div>
 
-    <label>Time (HH:mm):</label>
-    <input type="text" th:field="*{interviewTime}" placeholder="14:30" required />
+                <div class="form-row">
+                    <div class="form-group col-md-6">
+                        <label>Ngày:</label>
+                        <input type="date" th:field="*{interviewDate}" class="form-control" required />
+                    </div>
+                    <div class="form-group col-md-6">
+                        <label>Thời gian (HH:mm):</label>
+                        <input type="time" th:field="*{interviewTime}" class="form-control" required />
+                    </div>
+                </div>
 
-    <label>Location/Link:</label>
-    <input type="text" th:field="*{locationOrLink}" />
+                <div class="form-group">
+                    <label>Địa điểm / Link cuộc họp:</label>
+                    <input type="text" th:field="*{locationOrLink}" class="form-control" placeholder="Nhập địa điểm hoặc link" />
+                </div>
 
-    <button type="submit" th:disabled="${#lists.isEmpty(interviewers)}">Assign and Schedule</button>
-    <a th:href="@{'/applications/' + ${app.id}}">Cancel</a>
-</form>
+                <div class="text-right mt-4">
+                    <a th:href="@{'/applications/' + ${app.id}}" class="btn btn-secondary">Quay lại</a>
+                    <button type="submit" class="btn btn-primary" th:disabled="${#lists.isEmpty(interviewers)}">Gán lịch</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>

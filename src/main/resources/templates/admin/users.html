@@ -118,8 +118,8 @@
                     </td>
                     <td th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}">date</td>
                     <td class="actions-cell">
-                        <a th:if="${u.role.name() == 'CANDIDATE'}"
-                           th:href="@{/applications/user/{userId}(userId=${u.id})}"
+                        <!-- Đã bỏ th:if để hiển thị Details cho tất cả -->
+                        <a th:href="@{/applications/user/{userId}(userId=${u.id})}"
                            class="btn btn-secondary btn-sm"
                            style="margin-bottom: 5px; display: block; width: 100%; text-align: center;">Details</a>
 
