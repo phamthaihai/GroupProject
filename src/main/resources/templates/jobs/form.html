@@ -13,6 +13,10 @@
             </div>
         </div>
 
+        <!-- Notification Banners -->
+        <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
         <!-- Thông báo nếu job đã CLOSED -->
         <div th:if="${job.status == 'CLOSED'}" class="alert alert-info" style="background: #e8f4fd; color: #1a5276; border: 1px solid #baddf9;">
             Closed job postings cannot be edited.
@@ -84,7 +88,7 @@
                 <!-- Nút hành động -->
                 <div class="btn-group" style="margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--border); justify-content: flex-end;">
                     <!-- Nút Cancel -->
-                    <a th:href="${mode == 'create' ? '/jobs' : '/jobs/detail/' + job.id}"
+                    <a th:href="${mode == 'create' ? '/jobs' : '/jobs/' + job.id}"
                        class="btn btn-secondary">Cancel</a>
 
                     <!-- Nhóm nút lưu (ẩn nếu CLOSED) -->

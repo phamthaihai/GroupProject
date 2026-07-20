@@ -121,7 +121,10 @@ public class LoginController {
             // HƯỚNG 2b: Sai pass/email thông thường -> Về lại trang login kèm param hiển thị Generic Banner
             return "redirect:/login?error=generic";
 
-        } catch (Exception e) {
+        }catch (IllegalStateException e) {
+            return "redirect:/login?error=status";
+        }
+        catch (Exception e) {
             // Dự phòng các lỗi hệ thống không lường trước khác
             return "redirect:/login?error=generic";
         }

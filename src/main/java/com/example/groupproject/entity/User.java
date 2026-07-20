@@ -35,7 +35,7 @@ public class User {
     @Enumerated(EnumType.STRING)
     @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false, length = 20)
-    private UserStatus status = UserStatus.INACTIVE;
+    private UserStatus status;
 
     @Column(name = "failed_login_count", nullable = false)
     private Short failedLoginCount = 0;

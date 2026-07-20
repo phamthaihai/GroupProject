@@ -60,7 +60,16 @@ public class ApplicationService {
         application.setCvStoragePath(storagePath);
         application.setStatus(ApplicationStatus.APPLIED);
 
-        return applicationRepository.save(application);
+        Application savedApp = applicationRepository.save(application);
+
+        com.example.groupproject.entity.ActivityLog log = new com.example.groupproject.entity.ActivityLog();
+        log.setActor(candidate);
+        log.setActorUsername(candidate.getUsername());
+        log.setEventType(com.example.groupproject.entity.enums.ActivityEventType.APPLICATION_STATUS_CHANGED);
+        log.setDescription("Candidate " + candidate.getUsername() + " applied for job: " + job.getTitle());
+        activityLogRepository.save(log);
+
+        return savedApp;
     }
 
     public List<Application> getApplicationsByCandidate(Integer candidateId) {

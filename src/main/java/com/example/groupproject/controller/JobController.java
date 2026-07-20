@@ -32,21 +32,14 @@ import java.util.Map;
 @RequestMapping("/jobs")
 public class JobController {
 
-    private final JobManagementService jobService;
-    private final AuthService authService;
-
-   // @Autowired
-    //private JobManagementService jobService;
-   // @Autowired
-    //private AuthService authService;
+    @Autowired
+    private JobManagementService jobService;
+    @Autowired
+    private AuthService authService;
     @Autowired
     private JobService publicJobService;
     @Autowired
     private ApplicationService applicationService;
-    public JobController(JobManagementService jobService, AuthService authService) {
-        this.jobService = jobService;
-        this.authService = authService;
-    }
 
     @GetMapping({"", "/"})
     public String listJobs(
@@ -73,6 +66,9 @@ public class JobController {
         }
         
         // 3. Gọi Service lấy dữ liệu công việc và danh sách phòng ban làm filter dropdown cho ADMIN/HR
+        if (keyword != null && keyword.trim().isEmpty()) keyword = null;
+        if (department != null && department.trim().isEmpty()) department = null;
+        
         List<JobListRow> jobs = jobService.getJobsForList(currentUser, status, keyword, department);
         List<String> departments = jobService.getDistinctDepartments(currentUser);
         Map<String, Long> counts = jobService.getJobCountsByStatus(currentUser);
@@ -124,21 +120,104 @@ public class JobController {
         return "redirect:/jobs";
     }
 
+    @GetMapping({"/create", "/new"})
+    public String createJobForm(Model model, HttpSession session) {
+        User currentUser = authService.getCurrentUser(session);
+        authService.requireAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
+        
+        JobFormDTO job = new JobFormDTO();
+        model.addAttribute("job", job);
+        model.addAttribute("mode", "create");
+        return "jobs/form";
+    }
+
+    @GetMapping("/edit/{id}")
+    public String editJobForm(@PathVariable Integer id, Model model, HttpSession session, RedirectAttributes ra) {
+        User currentUser = authService.getCurrentUser(session);
+        authService.requireAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
+        
+        try {
+            JobPosting jobPosting = jobService.getJobById(id, currentUser);
+            JobFormDTO dto = new JobFormDTO();
+            dto.setId(jobPosting.getId().longValue());
+            dto.setTitle(jobPosting.getTitle());
+            dto.setDepartment(jobPosting.getDepartment());
+            dto.setLocation(jobPosting.getLocation());
+            dto.setDescription(jobPosting.getDescription());
+            dto.setRequirements(jobPosting.getRequirements());
+            dto.setSalaryRange(jobPosting.getSalaryRange());
+            dto.setDeadline(jobPosting.getApplicationDeadline());
+            dto.setStatus(jobPosting.getStatus().name());
+            
+            model.addAttribute("job", dto);
+            model.addAttribute("mode", "edit");
+            return "jobs/form";
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/jobs";
+        }
+    }
+
+    @PostMapping("/save")
+    public String saveJob(@Valid @ModelAttribute("job") JobFormDTO jobForm,
+                          BindingResult bindingResult,
+                          @RequestParam(required = false) String action,
+                          HttpSession session,
+                          Model model, RedirectAttributes ra) {
+        User currentUser = authService.getCurrentUser(session);
+        authService.requireAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("mode", jobForm.getId() == null ? "create" : "edit");
+            return "jobs/form";
+        }
+
+        try {
+            JobPosting savedJob = jobService.saveJob(jobForm, currentUser);
+            
+            if ("publish".equals(action)) {
+                jobService.publishJob(savedJob.getId(), currentUser);
+                ra.addFlashAttribute("successMessage", "Job posting published successfully!");
+            } else if ("saveDraft".equals(action)) {
+                ra.addFlashAttribute("successMessage", "Job posting saved as Draft.");
+            } else {
+                ra.addFlashAttribute("successMessage", "Job posting saved successfully.");
+            }
+            return "redirect:/jobs/" + savedJob.getId();
+        } catch (Exception e) {
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("mode", jobForm.getId() == null ? "create" : "edit");
+            return "jobs/form";
+        }
+    }
+
     @GetMapping("/{id}")
     public String publicJobDetail(@PathVariable Integer id, HttpSession session, Model model) {
-        com.example.groupproject.entity.JobPosting job = publicJobService.getJobById(id);
+        User currentUser = authService.getCurrentUser(session);
+        boolean isStaff = (currentUser != null && (currentUser.getRole() == UserRole.HR_MANAGER || currentUser.getRole() == UserRole.ADMIN));
+
+        if (isStaff) {
+            try {
+                JobPosting authJob = jobService.getJobById(id, currentUser);
+                model.addAttribute("job", authJob);
+                model.addAttribute("applications", applicationService.getApplicationsForJob(id, "ALL", currentUser));
+                return "jobs/detail";
+            } catch (IllegalStateException e) {
+                // HR Manager view another's job, fallback to public view below
+            }
+        }
+
+        JobPosting job = publicJobService.getJobById(id);
         if (job == null) {
             return "redirect:/jobs";
         }
 
-        User currentUser = authService.getCurrentUser(session);
         boolean isGuest = (currentUser == null);
         boolean isCandidate = (currentUser != null && currentUser.getRole() == UserRole.CANDIDATE);
-        boolean isClosed = (job.getStatus() != com.example.groupproject.entity.enums.JobStatus.ACTIVE);
+        boolean isClosed = (job.getStatus() != JobStatus.ACTIVE);
 
         // Draft postings are only visible to HR Managers/Admins
-        if (job.getStatus() == com.example.groupproject.entity.enums.JobStatus.DRAFT) {
-            boolean isStaff = (currentUser != null && (currentUser.getRole() == UserRole.HR_MANAGER || currentUser.getRole() == UserRole.ADMIN));
+        if (job.getStatus() == JobStatus.DRAFT) {
             if (!isStaff) {
                 return "redirect:/jobs";
             }
@@ -175,11 +254,11 @@ public class JobController {
             redirectAttributes.addFlashAttribute("successMessage", "Your application has been submitted successfully. ");
             return "redirect:/jobs/" + id;
         } catch (Exception ex) {
-            com.example.groupproject.entity.JobPosting job = publicJobService.getJobById(id);
+            JobPosting job = publicJobService.getJobById(id);
             model.addAttribute("job", job);
             model.addAttribute("isGuest", false);
             model.addAttribute("isCandidate", true);
-            model.addAttribute("isClosed", job.getStatus() != com.example.groupproject.entity.enums.JobStatus.ACTIVE);
+            model.addAttribute("isClosed", job.getStatus() != JobStatus.ACTIVE);
             model.addAttribute("hasApplied", false);
             model.addAttribute("errorMessage", ex.getMessage());
             return "jobs/public-detail";

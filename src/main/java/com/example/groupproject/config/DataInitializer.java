@@ -1,5 +1,4 @@
 package com.example.groupproject.config;
-
 import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
@@ -10,7 +9,6 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-
 /**
  * Khởi tạo dữ liệu ban đầu khi ứng dụng start.
  *
