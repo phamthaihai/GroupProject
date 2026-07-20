@@ -15,7 +15,10 @@ import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
 import com.example.groupproject.repository.UserRepository;
+import com.example.groupproject.repository.ActivityLogRepository;
 import com.example.groupproject.exception.AccountLockedException;
+import com.example.groupproject.entity.ActivityLog;
+import com.example.groupproject.entity.enums.ActivityEventType;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Optional;
@@ -29,13 +32,16 @@ public class AuthService {
     private final EmailService emailService;
     @Autowired
     private UserRepository userRepository;
+    private final ActivityLogRepository activityLogRepository;
 
     public AuthService(UserRepository userRepository,
                        BCryptPasswordEncoder encoder,
-                       EmailService emailService) {
+                       EmailService emailService,
+                       ActivityLogRepository activityLogRepository) {
         this.userRepository = userRepository;
         this.encoder = encoder;
         this.emailService = emailService;
+        this.activityLogRepository = activityLogRepository;
     }
 
     @Transactional
@@ -103,12 +109,28 @@ public class AuthService {
             if (newFailedCount >= 5) {
                 user.setLockedAt(Instant.now());
                 userRepository.save(user);
+
+                ActivityLog lockLog = new ActivityLog();
+                lockLog.setActor(user);
+                lockLog.setActorUsername(user.getUsername());
+                lockLog.setEventType(ActivityEventType.ACCOUNT_LOCKED);
+                lockLog.setDescription("Account locked due to 5 failed login attempts");
+                activityLogRepository.save(lockLog);
+
                 throw new AccountLockedException("Your account has\n" +
                         "been temporarily locked after too many failed attempts.\n" +
                         "Try again in 10 minutes or contact your administrator");
             }
 
             userRepository.save(user);
+
+            ActivityLog failLog = new ActivityLog();
+            failLog.setActor(user);
+            failLog.setActorUsername(user.getUsername());
+            failLog.setEventType(ActivityEventType.SIGN_IN_FAILURE);
+            failLog.setDescription("Failed sign in attempt (count: " + newFailedCount + ")");
+            activityLogRepository.save(failLog);
+
             throw new IllegalArgumentException("Incorrect username or password!");
         }
 
@@ -117,6 +139,14 @@ public class AuthService {
         userRepository.save(user);
 
         session.setAttribute(SESSION_USER_ID, user.getId());
+
+        ActivityLog successLog = new ActivityLog();
+        successLog.setActor(user);
+        successLog.setActorUsername(user.getUsername());
+        successLog.setEventType(ActivityEventType.SIGN_IN_SUCCESS);
+        successLog.setDescription("Successful sign in");
+        activityLogRepository.save(successLog);
+
         return user;
     }
 

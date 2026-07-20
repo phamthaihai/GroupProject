@@ -19,6 +19,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import com.example.groupproject.repository.ActivityLogRepository;
+import com.example.groupproject.entity.ActivityLog;
+import com.example.groupproject.entity.enums.ActivityEventType;
 
 @Controller
 @Transactional
@@ -28,13 +31,16 @@ public class InterviewController {
     private final ApplicationRepository applicationRepository;
     private final InterviewRepository interviewRepository;
     private final AuthService authService;
+    private final ActivityLogRepository activityLogRepository;
 
     public InterviewController(UserRepository userRepository, ApplicationRepository applicationRepository,
-                               InterviewRepository interviewRepository, AuthService authService) {
+                               InterviewRepository interviewRepository, AuthService authService,
+                               ActivityLogRepository activityLogRepository) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.interviewRepository = interviewRepository;
         this.authService = authService;
+        this.activityLogRepository = activityLogRepository;
     }
 
     // 1. HIỆN FORM ASSIGN
@@ -107,7 +113,9 @@ public class InterviewController {
     public String processEvaluation(@RequestParam Integer interviewId,
                                     @RequestParam Short rating,
                                     @RequestParam String feedback,
+                                    jakarta.servlet.http.HttpSession session,
                                     RedirectAttributes redirect) {
+        User currentUser = authService.getCurrentUser(session);
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid ID"));
 
@@ -118,6 +126,15 @@ public class InterviewController {
         interview.setStatus(com.example.groupproject.entity.enums.InterviewStatus.EVALUATED);
 
         interviewRepository.save(interview);
+
+        if (currentUser != null) {
+            ActivityLog log = new ActivityLog();
+            log.setActor(currentUser);
+            log.setActorUsername(currentUser.getUsername());
+            log.setEventType(ActivityEventType.EVALUATION_SUBMITTED);
+            log.setDescription("Submitted evaluation for interview ID: " + interviewId + " with rating " + rating);
+            activityLogRepository.save(log);
+        }
 
         redirect.addFlashAttribute("message", "Evaluation submitted.");
         return "redirect:/applications/" + interview.getApplication().getId();

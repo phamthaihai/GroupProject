@@ -105,7 +105,7 @@ public class JobManagementService {
         job.setSalaryRange(jobForm.getSalaryRange());
         job.setApplicationDeadline(jobForm.getDeadline());
         
-        if (jobForm.getStatus() != null) {
+        if (jobForm.getStatus() != null && !jobForm.getStatus().isEmpty()) {
             job.setStatus(JobStatus.valueOf(jobForm.getStatus()));
         } else if (job.getId() == null) {
             job.setStatus(JobStatus.DRAFT);
