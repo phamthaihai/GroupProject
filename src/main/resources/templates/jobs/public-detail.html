@@ -67,14 +67,16 @@
                 <div th:if="${isGuest}" class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
                     <span>User Login or create an account to apply.</span>
                     <div>
-                        <a th:href="@{/login}" class="btn btn-primary btn-sm">User Login</a>
+                        <a th:href="@{/login(redirect='/jobs/' + ${job.id})}" class="btn btn-primary btn-sm">User Login</a>
                         <a th:href="@{/register}" class="btn btn-secondary btn-sm" style="margin-left: 0.25rem;">Create Account</a>
                     </div>
                 </div>
 
                 <!-- Case: Candidate not applied yet -->
                 <div th:if="${isCandidate && !hasApplied}">
-                    <form th:action="@{/jobs/{id}/apply(id=${job.id})}" th:object="${applicationForm}" method="post" enctype="multipart/form-data">
+                    <button id="applyNowBtn" class="btn btn-primary" style="width: 100%; margin-bottom: 1.5rem;" onclick="document.getElementById('applyFormContainer').style.display='block'; this.style.display='none';">Apply Now</button>
+                    <div id="applyFormContainer" style="display: none;">
+                        <form th:action="@{/jobs/{id}/apply(id=${job.id})}" th:object="${applicationForm}" method="post" enctype="multipart/form-data">
                         <!-- Cover Letter -->
                         <div class="form-group" style="margin-bottom: 1.25rem;">
                             <label for="coverLetter">Cover Letter (Optional)</label>
@@ -101,7 +103,8 @@
 
                         <!-- Submit Button -->
                         <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Application</button>
-                    </form>
+                        </form>
+                    </div>
                 </div>
             </div>
         </section>

@@ -45,7 +45,7 @@
 
         <!-- Empty State (Filtered results empty) -->
         <div th:if="${hasApplications && applications.isEmpty()}" class="card empty-state" style="text-align: center; padding: 2rem 1.5rem;">
-            <p>No applications matches the selected filter.</p>
+            <p>No applications at this stage.</p>
         </div>
 
         <!-- Applications Table -->
@@ -79,7 +79,7 @@
                               method="post"
                               style="display: inline;"
                               onsubmit="return confirm('Are you sure you want to withdraw this application? This action cannot be undone.');">
-                            <button type="submit" class="btn btn-danger btn-sm">Withdraw</button>
+                            <button type="submit" class="btn btn-secondary btn-sm">Withdraw</button>
                         </form>
                         <span th:if="${app.status.name() != 'APPLIED' && app.status.name() != 'SCREENING'}" style="color: var(--muted); font-size: 0.9rem;">—</span>
                     </td>

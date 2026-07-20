@@ -36,6 +36,7 @@ public class JobPosting {
     private LocalDate applicationDeadline;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(nullable = false, length = 20)
     private JobStatus status = JobStatus.DRAFT;
 

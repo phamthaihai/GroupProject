@@ -13,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.groupproject.dto.LoginDTO;
 import com.example.groupproject.entity.User;
@@ -26,11 +27,15 @@ public class LoginController {
 
     @GetMapping("/login")
     public String showFormLogin(
+            @RequestParam(required = false) String redirect,
             @ModelAttribute("msg") String msg,
             @ModelAttribute("err") String err,
             Model model,
             HttpSession session
     ) {
+        if (redirect != null && !redirect.isBlank()) {
+            session.setAttribute("redirectUrl", redirect);
+        }
         User currentUser = authService.getCurrentUser(session);
 
         if (currentUser != null) {
@@ -81,6 +86,12 @@ public class LoginController {
             User user = authService.login(loginDTO, session);
 
             ra.addFlashAttribute("msg", "Đăng nhập thành công");
+
+            String redirectUrl = (String) session.getAttribute("redirectUrl");
+            if (redirectUrl != null && !redirectUrl.isBlank()) {
+                session.removeAttribute("redirectUrl");
+                return "redirect:" + redirectUrl;
+            }
 
             if (user.getRole() != null) {
                 switch (user.getRole()) {

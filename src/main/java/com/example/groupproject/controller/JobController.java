@@ -11,6 +11,7 @@ import com.example.groupproject.service.AuthService;
 import com.example.groupproject.service.JobManagementService;
 import com.example.groupproject.service.JobService;
 import com.example.groupproject.service.ApplicationService;
+import com.example.groupproject.entity.Application;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,8 +59,8 @@ public class JobController {
         // 1. Lấy thông tin user đăng nhập hiện tại từ session
         User currentUser = authService.getCurrentUser(session);
         
-        // 2. Nếu chưa đăng nhập hoặc là CANDIDATE, hiển thị public job list (SCR-13)
-        if (currentUser == null || currentUser.getRole() == UserRole.CANDIDATE) {
+        // 2. Nếu chưa đăng nhập hoặc là CANDIDATE/INTERVIEWER, hiển thị public job list (SCR-13)
+        if (currentUser == null || currentUser.getRole() == UserRole.CANDIDATE || currentUser.getRole() == UserRole.INTERVIEWER) {
             JobService.PublicJobListData data = publicJobService.getPublicJobList(department, location);
             model.addAttribute("jobs", data.jobs());
             model.addAttribute("departments", data.departments());
@@ -171,7 +172,7 @@ public class JobController {
 
         try {
             applicationService.applyToJob(id, currentUser, form);
-            redirectAttributes.addFlashAttribute("successMessage", "Your application has been submitted successfully. Track its status in My Applications.");
+            redirectAttributes.addFlashAttribute("successMessage", "Your application has been submitted successfully. ");
             return "redirect:/jobs/" + id;
         } catch (Exception ex) {
             com.example.groupproject.entity.JobPosting job = publicJobService.getJobById(id);
@@ -182,6 +183,26 @@ public class JobController {
             model.addAttribute("hasApplied", false);
             model.addAttribute("errorMessage", ex.getMessage());
             return "jobs/public-detail";
+        }
+    }
+
+    @GetMapping("/detail/{id}")
+    public String viewJobDetailInternal(@PathVariable Integer id, HttpSession session, Model model) {
+        User currentUser = authService.getCurrentUser(session);
+        if (currentUser == null) {
+            return "redirect:/login";
+        }
+        if (currentUser.getRole() != UserRole.ADMIN && currentUser.getRole() != UserRole.HR_MANAGER) {
+            return "redirect:/jobs";
+        }
+        try {
+            JobPosting job = jobService.getJobById(id, currentUser);
+            List<Application> apps = jobService.getApplicationsForJob(id, currentUser);
+            model.addAttribute("job", job);
+            model.addAttribute("applications", apps);
+            return "jobs/detail";
+        } catch (Exception e) {
+            return "redirect:/jobs";
         }
     }
 }

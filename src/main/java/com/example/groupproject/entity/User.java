@@ -24,14 +24,16 @@ public class User {
     @Column(name = "email", nullable = false, unique = true)
     private String email;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(name = "role", nullable = false, length = 20)
     private UserRole role;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(name = "status", nullable = false, length = 20)
     private UserStatus status = UserStatus.INACTIVE;
 
@@ -46,7 +48,7 @@ public class User {
 
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
-    private Boolean emailVerified;
+    private Boolean emailVerified = false;
     private String verifyToken;
     private LocalDateTime verifyTokenExpiresAt;
 

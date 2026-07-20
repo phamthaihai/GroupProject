@@ -21,10 +21,10 @@ public interface ActivityLogDisplayViewRepository extends JpaRepository<Activity
 
     @Query("""
         SELECT v FROM ActivityLogDisplayView v
-        WHERE (:eventType IS NULL OR v.eventType = :eventType)
-          AND (:search IS NULL OR :search = '' 
-               OR LOWER(v.actorUsername) LIKE LOWER(CONCAT('%', :search, '%'))
-               OR LOWER(v.actorDisplayName) LIKE LOWER(CONCAT('%', :search, '%')))
+        WHERE (cast(:eventType as string) IS NULL OR v.eventType = :eventType)
+          AND (cast(:search as string) IS NULL OR :search = '' 
+               OR LOWER(v.actorUsername) LIKE LOWER(CONCAT('%', cast(:search as string), '%'))
+               OR LOWER(v.actorDisplayName) LIKE LOWER(CONCAT('%', cast(:search as string), '%')))
           AND (cast(:dateFrom as timestamp) IS NULL OR v.createdAt >= :dateFrom)
           AND (cast(:dateTo as timestamp) IS NULL OR v.createdAt <= :dateTo)
         """)

@@ -38,11 +38,11 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      */
     @Query("""
             SELECT u FROM User u
-            WHERE (:search IS NULL OR :search = ''
-                   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :search, '%'))
-                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')))
-              AND (:role IS NULL OR u.role = :role)
-              AND (:status IS NULL OR u.status = :status)
+            WHERE (cast(:search as string) IS NULL OR :search = ''
+                   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', cast(:search as string), '%'))
+                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', cast(:search as string), '%')))
+              AND (cast(:role as string) IS NULL OR u.role = :role)
+              AND (cast(:status as string) IS NULL OR u.status = :status)
             ORDER BY u.createdAt DESC
             """)
     List<User> searchUsers(@Param("search") String search,

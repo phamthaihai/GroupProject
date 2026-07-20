@@ -27,7 +27,7 @@ public interface InterviewRepository extends JpaRepository<Interview, Integer> {
     @Query("""
             SELECT COUNT(i) FROM Interview i
             WHERE i.interviewDate BETWEEN :from AND :to
-              AND (:createdById IS NULL OR i.application.job.createdBy.id = :createdById)
+              AND (cast(:createdById as integer) IS NULL OR i.application.job.createdBy.id = :createdById)
             """)
     long countUpcomingScoped(@Param("from") LocalDate from,
                              @Param("to") LocalDate to,

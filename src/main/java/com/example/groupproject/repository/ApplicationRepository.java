@@ -22,7 +22,7 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
     @Query("""
             SELECT COUNT(a) FROM Application a
             WHERE a.status = :status
-              AND (:createdById IS NULL OR a.job.createdBy.id = :createdById)
+              AND (cast(:createdById as integer) IS NULL OR a.job.createdBy.id = :createdById)
             """)
     long countByStatusScoped(@Param("status") ApplicationStatus status,
                              @Param("createdById") Integer createdById);
