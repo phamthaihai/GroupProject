@@ -1,5 +1,6 @@
 package com.example.groupproject.controller;
 
+import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.User;
 import com.example.groupproject.service.AuthService;
 import jakarta.servlet.http.HttpSession;
@@ -16,9 +17,9 @@ public class HomeController {
     @GetMapping("/")
     public String home(HttpSession session) {
         User user = authService.getCurrentUser(session);
-        if (user != null) {
+        if (user != null && user.getRole() != UserRole.CANDIDATE && user.getRole() != UserRole.INTERVIEWER) {
             return "redirect:/profile";
         }
-        return "user/index";
+        return "forward:/jobs";
     }
 }

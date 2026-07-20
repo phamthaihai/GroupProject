@@ -49,7 +49,7 @@ public class LoginController {
                 return "redirect:/hr/dashboard";
             }
             if (currentUser.getRole() == UserRole.INTERVIEWER) {
-                return "redirect:/candidate/applications";
+                return "redirect:hr/assign-interview";
             }
             return "redirect:/";
         }
@@ -100,7 +100,7 @@ public class LoginController {
                     case HR_MANAGER:
                         return "redirect:/hr/dashboard";    // SCR-06
                     case INTERVIEWER:
-                        return "redirect:/interviewer/applications"; // SCR-17 (Sửa lại route của bạn nếu cần)
+                        return "redirect:/hr/assign-interview"; // SCR-17 (Sửa lại route của bạn nếu cần)
                     case CANDIDATE:
                         return "redirect:/candidate/applications";   // SCR-15
                     default:
@@ -128,6 +128,11 @@ public class LoginController {
             // Dự phòng các lỗi hệ thống không lường trước khác
             return "redirect:/login?error=generic";
         }
+    }
+
+    @GetMapping("/logout")
+    public String logoutGet(HttpSession session, RedirectAttributes ra) {
+        return logout(session, ra);
     }
 
     @PostMapping("/logout")

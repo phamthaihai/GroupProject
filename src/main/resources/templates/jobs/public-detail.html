@@ -64,12 +64,8 @@
                 </div>
 
                 <!-- Case: Guest (Unauthenticated) -->
-                <div th:if="${isGuest}" class="alert alert-info" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
-                    <span>User Login or create an account to apply.</span>
-                    <div>
-                        <a th:href="@{/login(redirect='/jobs/' + ${job.id})}" class="btn btn-primary btn-sm">User Login</a>
-                        <a th:href="@{/register}" class="btn btn-secondary btn-sm" style="margin-left: 0.25rem;">Create Account</a>
-                    </div>
+                <div th:if="${isGuest}">
+                    <a th:href="@{/login(redirect='/jobs/' + ${job.id})}" class="btn btn-primary" style="width: 100%; text-align: center; display: block;">Apply Now</a>
                 </div>
 
                 <!-- Case: Candidate not applied yet -->

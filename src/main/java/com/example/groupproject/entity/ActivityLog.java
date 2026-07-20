@@ -28,7 +28,7 @@ public class ActivityLog {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "ip_address", length = 45)
+    @Column(name = "ip_address", columnDefinition = "inet", insertable = false, updatable = false)
     private String ipAddress;
 
     @Column(name = "created_at", nullable = false, updatable = false)

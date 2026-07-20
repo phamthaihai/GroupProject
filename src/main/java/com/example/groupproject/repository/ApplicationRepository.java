@@ -15,7 +15,8 @@ public interface ApplicationRepository extends JpaRepository<Application, Intege
     long countByJobId(Integer jobId);
     boolean existsByJobIdAndCandidateId(Integer jobId, Integer candidateId);
 
-    List<Application> findByCandidateIdOrderBySubmittedAtDesc(Integer candidateId);
+    @Query("SELECT a FROM Application a JOIN FETCH a.job WHERE a.candidate.id = :candidateId ORDER BY a.submittedAt DESC")
+    List<Application> findByCandidateIdOrderBySubmittedAtDesc(@Param("candidateId") Integer candidateId);
     List<Application> findByJobIdOrderBySubmittedAtDesc(Integer jobId);
     List<Application> findByJobIdAndStatusOrderBySubmittedAtDesc(Integer jobId, ApplicationStatus status);
 
