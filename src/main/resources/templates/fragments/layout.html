@@ -9,15 +9,32 @@
 <body>
 <header th:fragment="header" class="site-header">
     <div class="container header-inner">
-        <a th:href="@{/profile}" class="logo">TalentHub</a>
-        <nav class="main-nav" th:if="${isAuthenticated}">
-            <a th:href="@{/profile}">Profile</a>
-            <a th:href="@{/candidate/applications}" th:if="${currentUser != null && currentUser.role.name() == 'CANDIDATE'}">My Applications</a>
-            <a th:href="@{/jobs}" th:if="${canAccessHr}">Job List</a>
-            <a th:href="@{/hr/report/1}" th:if="${canAccessHr}">Pipeline Report</a>
-            <a th:href="@{/hr/dashboard}" th:if="${canAccessHr}">HR Dashboard</a>
-            <a th:href="@{/admin/dashboard}" th:if="${isAdmin}">Admin Dashboard</a>
-            <a th:href="@{/admin/users}" th:if="${isAdmin}">Users</a>
+        <a th:href="@{/}" class="logo">TalentHub</a>
+        <nav class="main-nav">
+            <!-- Guests Menu -->
+            <th:block th:if="${!isAuthenticated}">
+                <a th:href="@{/login}">Sign In</a>
+                <a th:href="@{/register}">Register</a>
+            </th:block>
+            <!-- Authenticated Menu -->
+            <th:block th:if="${isAuthenticated}">
+                <!-- Candidates Menu -->
+                <th:block th:if="${currentUser != null && currentUser.role.name() == 'CANDIDATE'}">
+                    <a th:href="@{/candidate/applications}">My Applications</a>
+                    <span style="color: #fff; margin-left: 1.25rem; font-size: 0.95rem;" th:text="${currentUser.fullName}">Username</span>
+                    <a th:href="@{/logout}">Logout</a>
+                </th:block>
+                <!-- Staff Menu (HR/Admin) -->
+                <th:block th:if="${currentUser != null && currentUser.role.name() != 'CANDIDATE'}">
+                    <a th:href="@{/profile}">Profile</a>
+                    <a th:href="@{/jobs}" th:if="${canAccessHr}">Job List</a>
+                    <a th:href="@{/hr/report/1}" th:if="${canAccessHr}">Pipeline Report</a>
+                    <a th:href="@{/hr/dashboard}" th:if="${canAccessHr}">HR Dashboard</a>
+                    <a th:href="@{/admin/dashboard}" th:if="${isAdmin}">Admin Dashboard</a>
+                    <a th:href="@{/admin/users}" th:if="${isAdmin}">Users</a>
+                    <a th:href="@{/logout}">Logout</a>
+                </th:block>
+            </th:block>
         </nav>
     </div>
 </header>

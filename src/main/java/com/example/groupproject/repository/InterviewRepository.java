@@ -16,6 +16,8 @@ import java.time.LocalDate;
  */
 public interface InterviewRepository extends JpaRepository<Interview, Integer> {
 
+    java.util.List<Interview> findByInterviewerIdOrderByIdAsc(Integer interviewerId);
+
     /**
      * Đếm số interview sắp diễn ra trong khoảng thời gian, có thể scope theo job creator.
      * Dùng cho dashboard stats "upcoming interviews (7 days)".
@@ -27,7 +29,7 @@ public interface InterviewRepository extends JpaRepository<Interview, Integer> {
     @Query("""
             SELECT COUNT(i) FROM Interview i
             WHERE i.interviewDate BETWEEN :from AND :to
-              AND (:createdById IS NULL OR i.application.job.createdBy.id = :createdById)
+              AND (cast(:createdById as integer) IS NULL OR i.application.job.createdBy.id = :createdById)
             """)
     long countUpcomingScoped(@Param("from") LocalDate from,
                              @Param("to") LocalDate to,

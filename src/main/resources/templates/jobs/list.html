@@ -72,7 +72,7 @@
             <div class="job-card" th:each="job : ${jobs}">
                 <div>
                     <div class="job-card-header">
-                        <a th:href="@{/jobs/{id}(id=${job.id})}" class="job-card-title" th:text="${job.title}">Job Title</a>
+                        <a th:href="@{/jobs/detail/{id}(id=${job.id})}" class="job-card-title" th:text="${job.title}">Job Title</a>
                         <span class="badge" 
                               th:classappend="${job.status.name() == 'ACTIVE'} ? 'badge-active' : (${job.status.name() == 'DRAFT'} ? 'badge-draft' : 'badge-closed')"
                               th:text="${job.status}">STATUS</span>
@@ -92,7 +92,7 @@
                     <div class="job-card-stats">
                         <div>
                             <strong>Applications:</strong> 
-                            <span th:text="${job.applicationCount}" style="font-weight: 700; color: var(--primary);">0</span>
+                            <a th:href="@{/hr/jobs/{id}/applications(id=${job.id})}" th:text="${job.applicationCount}" style="font-weight: 700; color: var(--primary); text-decoration: underline;">0</a>
                         </div>
                         <div th:if="${job.applicationDeadline != null}">
                             <strong>Deadline:</strong> 
