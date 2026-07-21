@@ -8,7 +8,14 @@
     <div class="container">
         <h1>Open Positions</h1>
 
-
+        <!-- SCR-13: guest-only sign-in prompt banner. -->
+        <div th:if="${!isAuthenticated}" class="alert alert-info guest-banner" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <span>User Login or create an account to apply for positions.</span>
+            <span class="guest-banner-actions" style="display: flex; gap: 0.5rem;">
+                <a th:href="@{/login}" class="btn btn-primary btn-sm">User Login</a>
+                <a th:href="@{/register}" class="btn btn-secondary btn-sm">Create Account</a>
+            </span>
+        </div>
 
         <!-- SCR-13: filters are populated from distinct ACTIVE job values. -->
         <form th:action="@{/jobs}" method="get" class="filter-bar public-job-filters">

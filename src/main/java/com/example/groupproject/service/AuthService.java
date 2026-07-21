@@ -56,7 +56,7 @@ public class AuthService {
         user.setFullName(dto.getFullname().trim());
         user.setUsername(dto.getEmail().split("@")[0]);
         user.setPasswordHash(encoder.encode(dto.getPassword()));
-        user.setRole(UserRole.INTERVIEWER);
+        user.setRole(UserRole.HR_MANAGER);
         user.setStatus(UserStatus.INACTIVE);
         user.setEmailVerified(false);
         user.setVerifyToken(token);

@@ -92,7 +92,7 @@
                     <div class="job-card-stats">
                         <div>
                             <strong>Applications:</strong> 
-                            <span th:text="${job.applicationCount}" style="font-weight: 700; color: var(--primary);">0</span>
+                            <a th:href="@{/hr/jobs/{id}/applications(id=${job.id})}" th:text="${job.applicationCount}" style="font-weight: 700; color: var(--primary); text-decoration: underline;">0</a>
                         </div>
                         <div th:if="${job.applicationDeadline != null}">
                             <strong>Deadline:</strong> 

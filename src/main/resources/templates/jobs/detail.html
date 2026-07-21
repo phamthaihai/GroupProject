@@ -36,6 +36,13 @@
             </div>
         </div>
 
+        <!-- SCR-12 tabs to SCR-16 and SCR-20 -->
+        <div class="tab-container" style="display: flex; gap: 0.5rem; margin-top: 1rem; margin-bottom: 1.5rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem;">
+            <a th:href="@{/jobs/detail/{id}(id=${job.id})}" class="tab-link active" style="text-decoration: none; color: #fff; background: var(--primary); padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px;">Job Details</a>
+            <a th:href="@{/hr/jobs/{id}/applications(id=${job.id})}" class="tab-link" style="text-decoration: none; color: var(--muted); padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px;">View Applications</a>
+            <a th:href="@{/hr/report/{id}(id=${job.id})}" class="tab-link" style="text-decoration: none; color: var(--muted); padding: 0.5rem 1rem; font-weight: 600; border-radius: 6px;">Report</a>
+        </div>
+
         <div class="form-grid">
             <!-- Job Info Section -->
             <div class="card" style="margin-bottom: 0;">
