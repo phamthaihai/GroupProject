@@ -72,7 +72,8 @@ public class AuthService {
         );
     }
 
-    @Transactional
+    // SỬA DÒNG NÀY: Khai báo không rollback đối với các Exception khóa/sai mật khẩu
+    @Transactional(noRollbackFor = {AccountLockedException.class, IllegalArgumentException.class})
     public User login(LoginDTO loginDTO, HttpSession session) {
         if (loginDTO == null ||
                 loginDTO.getEmail() == null || loginDTO.getEmail().isBlank() ||
@@ -91,63 +92,57 @@ public class AuthService {
         if (user.getLockedAt() != null && !user.isLoginLocked()) {
             user.setFailedLoginCount((short) 0);
             user.setLockedAt(null);
-            userRepository.save(user);
+            userRepository.saveAndFlush(user);
         }
-        if(user.getStatus().equals(UserStatus.INACTIVE)){
+
+        if (user.getStatus() == UserStatus.INACTIVE){
             throw new IllegalStateException("Tài khoản chưa được kích hoạt. Vui lòng kiểm tra gmail.");
         }
 
         if (user.isLoginLocked()) {
-            throw new AccountLockedException("Your account has\n" +
-                    "been temporarily locked after too many failed attempts.\n" +
-                    "Try again in 10 minutes or contact your administrator");
+            throw new AccountLockedException("Your account has been temporarily locked after too many failed attempts. Try again in 10 minutes or contact your administrator");
         }
 
         if (!encoder.matches(loginDTO.getPassword(), user.getPasswordHash())) {
             int newFailedCount = user.getFailedLoginCount() + 1;
             user.setFailedLoginCount((short) newFailedCount);
+
             if (newFailedCount >= 5) {
                 user.setLockedAt(Instant.now());
-                userRepository.save(user);
+                userRepository.saveAndFlush(user);
 
-                ActivityLog lockLog = new ActivityLog();
-                lockLog.setActor(user);
-                lockLog.setActorUsername(user.getUsername());
-                lockLog.setEventType(ActivityEventType.ACCOUNT_LOCKED);
-                lockLog.setDescription("Account locked due to 5 failed login attempts");
-                activityLogRepository.save(lockLog);
+                // Ghi log khóa tài khoản
+                createActivityLog(user, ActivityEventType.ACCOUNT_LOCKED, "Account locked due to 5 failed login attempts");
 
-                throw new AccountLockedException("Your account has\n" +
-                        "been temporarily locked after too many failed attempts.\n" +
-                        "Try again in 10 minutes or contact your administrator");
+                throw new AccountLockedException("Your account has been temporarily locked after too many failed attempts. Try again in 10 minutes or contact your administrator");
             }
+            userRepository.saveAndFlush(user);
 
-            userRepository.save(user);
-
-            ActivityLog failLog = new ActivityLog();
-            failLog.setActor(user);
-            failLog.setActorUsername(user.getUsername());
-            failLog.setEventType(ActivityEventType.SIGN_IN_FAILURE);
-            failLog.setDescription("Failed sign in attempt (count: " + newFailedCount + ")");
-            activityLogRepository.save(failLog);
+            // Ghi log nhập sai mật khẩu
+            createActivityLog(user, ActivityEventType.SIGN_IN_FAILURE, "Failed sign in attempt (count: " + newFailedCount + ")");
 
             throw new IllegalArgumentException("Incorrect username or password!");
         }
 
+        // 6. Mật khẩu đúng -> Reset số lần sai & Tạo session
         user.setFailedLoginCount((short) 0);
         user.setLockedAt(null);
-        userRepository.save(user);
+        userRepository.saveAndFlush(user);
 
         session.setAttribute(SESSION_USER_ID, user.getId());
 
-        ActivityLog successLog = new ActivityLog();
-        successLog.setActor(user);
-        successLog.setActorUsername(user.getUsername());
-        successLog.setEventType(ActivityEventType.SIGN_IN_SUCCESS);
-        successLog.setDescription("Successful sign in");
-        activityLogRepository.save(successLog);
+        // Ghi log đăng nhập thành công
+        createActivityLog(user, ActivityEventType.SIGN_IN_SUCCESS, "Successful sign in");
 
         return user;
+    }
+    private void createActivityLog(User user, ActivityEventType eventType, String description) {
+        ActivityLog log = new ActivityLog();
+        log.setActor(user);
+        log.setActorUsername(user.getUsername());
+        log.setEventType(eventType);
+        log.setDescription(description);
+        activityLogRepository.save(log);
     }
 
     @Transactional
