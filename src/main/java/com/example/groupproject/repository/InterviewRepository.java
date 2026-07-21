@@ -16,8 +16,6 @@ import java.time.LocalDate;
  */
 public interface InterviewRepository extends JpaRepository<Interview, Integer> {
 
-    java.util.List<Interview> findByInterviewerIdOrderByIdAsc(Integer interviewerId);
-
     /**
      * Đếm số interview sắp diễn ra trong khoảng thời gian, có thể scope theo job creator.
      * Dùng cho dashboard stats "upcoming interviews (7 days)".

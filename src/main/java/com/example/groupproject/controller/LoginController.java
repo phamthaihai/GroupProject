@@ -25,9 +25,6 @@ public class LoginController {
     @Autowired
     private AuthService authService;
 
-    @Autowired
-    private com.example.groupproject.repository.InterviewRepository interviewRepository;
-
     @GetMapping("/login")
     public String showFormLogin(
             @RequestParam(required = false) String redirect,
@@ -52,11 +49,7 @@ public class LoginController {
                 return "redirect:/hr/dashboard";
             }
             if (currentUser.getRole() == UserRole.INTERVIEWER) {
-                java.util.List<com.example.groupproject.entity.Interview> interviews = interviewRepository.findByInterviewerIdOrderByIdAsc(currentUser.getId());
-                if (!interviews.isEmpty()) {
-                    return "redirect:/applications/" + interviews.get(0).getApplication().getId();
-                }
-                return "redirect:/";
+                return "redirect:hr/assign-interview";
             }
             return "redirect:/";
         }
@@ -107,11 +100,7 @@ public class LoginController {
                     case HR_MANAGER:
                         return "redirect:/hr/dashboard";    // SCR-06
                     case INTERVIEWER:
-                        java.util.List<com.example.groupproject.entity.Interview> interviews = interviewRepository.findByInterviewerIdOrderByIdAsc(user.getId());
-                        if (!interviews.isEmpty()) {
-                            return "redirect:/applications/" + interviews.get(0).getApplication().getId();
-                        }
-                        return "redirect:/";
+                        return "redirect:/hr/assign-interview"; // SCR-17 (Sửa lại route của bạn nếu cần)
                     case CANDIDATE:
                         return "redirect:/candidate/applications";   // SCR-15
                     default:

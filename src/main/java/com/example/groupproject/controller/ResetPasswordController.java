@@ -45,7 +45,7 @@ public class ResetPasswordController {
                 emailService.sendResetPasswordEmail(dto.getEmail(), otp);
             }
             ra.addFlashAttribute("msg", "OTP has been sent to your email");
-            return "redirect:/reset-password";
+            return "redirect:/reset-password?email=" + dto.getEmail();
 
         } catch(Exception e){
             model.addAttribute("error", "An unexpected error occurred. Please try again.");
@@ -54,9 +54,11 @@ public class ResetPasswordController {
     }
 
     @GetMapping("/reset-password")
-    public String showResetPassword(Model model){
+    public String showResetPassword(@RequestParam(required = false) String email, Model model){
         if(!model.containsAttribute("resetPasswordDTO")){
-            model.addAttribute("resetPasswordDTO", new ResetPasswordDTO());
+            ResetPasswordDTO dto = new ResetPasswordDTO();
+            dto.setEmail(email);
+            model.addAttribute("resetPasswordDTO", dto);
         }
         return "auth/reset-password";
     }
