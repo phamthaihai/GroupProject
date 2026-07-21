@@ -84,6 +84,10 @@ CREATE TABLE users (
     failed_login_count  SMALLINT        NOT NULL DEFAULT 0,
     locked_at           TIMESTAMPTZ     NULL,           -- when account was locked
 
+    email_verified      BOOLEAN         NOT NULL DEFAULT FALSE,
+    verify_token        VARCHAR(255)    NULL,
+    verify_token_expires_at TIMESTAMP   NULL,
+
     -- SCR-08 user list: date_created column
     created_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
     updated_at          TIMESTAMPTZ     NOT NULL DEFAULT NOW(),
@@ -366,3 +370,74 @@ SELECT
 FROM activity_log al
 LEFT JOIN users u ON u.id = al.actor_id;
 
+
+-- ============================================================
+-- DEMO DATA SEEDING
+-- ============================================================
+
+-- Clean existing data first
+TRUNCATE TABLE activity_log, interviews, application_notes, applications, job_postings, password_reset_tokens, users CASCADE;
+
+-- Reset SERIAL sequences
+ALTER SEQUENCE users_id_seq RESTART WITH 1;
+ALTER SEQUENCE job_postings_id_seq RESTART WITH 1;
+ALTER SEQUENCE applications_id_seq RESTART WITH 1;
+ALTER SEQUENCE interviews_id_seq RESTART WITH 1;
+ALTER SEQUENCE activity_log_id_seq RESTART WITH 1;
+
+-- 1. USERS
+-- Password hash: '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe' encodes 'Admin@123'
+INSERT INTO users (id, full_name, username, email, password_hash, role, status, failed_login_count, locked_at, email_verified, verify_token, verify_token_expires_at, created_at, updated_at) VALUES
+(1, 'System Admin', 'admin', 'admin@talenthub.local', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'ADMIN', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(2, 'Alice Smith', 'alice_hr', 'alice@talenthub.local', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'HR_MANAGER', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(3, 'Bob Jones', 'bob_hr', 'bob@talenthub.local', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'HR_MANAGER', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(4, 'Charlie Brown', 'charlie_int', 'charlie@talenthub.local', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'INTERVIEWER', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(5, 'Diana Prince', 'diana_int', 'diana@talenthub.local', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'INTERVIEWER', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(6, 'John Doe', 'johndoe', 'johndoe@gmail.com', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'CANDIDATE', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(7, 'Jane Miller', 'janemiller', 'janemiller@gmail.com', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'CANDIDATE', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(8, 'Alex Johnson', 'alexj', 'alexj@gmail.com', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'CANDIDATE', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(9, 'Emma Watson', 'emmaw', 'emmaw@gmail.com', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'CANDIDATE', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW()),
+(10, 'Ryan Reynolds', 'ryanr', 'ryanr@gmail.com', '$2a$10$sbUBO838c1mQz/BA2QcQ.OYTxQdf101srB5eVqMAr7cWBl6WGLFNe', 'CANDIDATE', 'ACTIVE', 0, NULL, TRUE, NULL, NULL, NOW(), NOW());
+
+SELECT setval('users_id_seq', 10);
+
+-- 2. JOB POSTINGS
+INSERT INTO job_postings (id, title, department, location, description, requirements, salary_range, application_deadline, status, created_by, created_at, updated_at) VALUES
+(1, 'Senior Java Developer', 'Engineering', 'Ho Chi Minh City', 'We are looking for a Senior Java Developer to join our core backend engineering team. You will build high-throughput, low-latency APIs and collaborate with product teams to design robust solutions.', 'Requirements:\n- 5+ years of experience with Java, Spring Boot, and Hibernate.\n- Strong understanding of SQL databases, especially PostgreSQL.\n- Experience with microservices architecture.', '25,000,000 - 45,000,000 VND', CURRENT_DATE + 30, 'ACTIVE', 2, NOW(), NOW()),
+(2, 'HR Generalist', 'Human Resources', 'Hanoi', 'We are seeking an HR Generalist to manage end-to-end recruitment operations, employee engagement events, and assist in organizational development initiatives.', 'Requirements:\n- Bachelor''s degree in Human Resources, Business, or related fields.\n- 2+ years of generalist HR experience.\n- Excellent communication skills.', '15,000,000 - 22,000,000 VND', CURRENT_DATE + 30, 'ACTIVE', 3, NOW(), NOW()),
+(3, 'Product Manager', 'Product', 'Ho Chi Minh City', 'This is a draft posting for a future product management opening in our e-commerce business line.', 'Requirements:\n- Experience managing agile development teams.\n- Strong data-driven decision-making skills.', 'Negotiable', CURRENT_DATE + 45, 'DRAFT', 2, NOW(), NOW()),
+(4, 'Intern QA Engineer', 'Engineering', 'Da Nang', 'This position is now closed. It was aimed at recruiting junior talent for QA testing.', 'Requirements:\n- Basic programming knowledge.\n- High attention to detail.', '5,000,000 VND', CURRENT_DATE + 10, 'CLOSED', 3, NOW(), NOW());
+
+SELECT setval('job_postings_id_seq', 4);
+
+-- 3. APPLICATIONS
+INSERT INTO applications (id, job_id, candidate_id, cover_letter, cv_filename, cv_storage_path, status, status_changed_at, submitted_at, updated_at) VALUES
+(1, 1, 6, 'Hi, I am highly interested in the Java Developer role. Here is my resume.', 'john_doe_resume.pdf', 'uploads/john_doe_resume.pdf', 'APPLIED', NOW(), NOW(), NOW()),
+(2, 1, 7, 'I would love to apply for this position and build awesome backend APIs.', 'jane_miller_resume.pdf', 'uploads/jane_miller_resume.pdf', 'SCREENING', NOW() - INTERVAL '1 day', NOW() - INTERVAL '1 day', NOW()),
+(3, 1, 8, 'Dear hiring team, I have 6 years of Java experience. Looking forward to your call.', 'alex_johnson_cv.pdf', 'uploads/alex_johnson_cv.pdf', 'INTERVIEW', NOW() - INTERVAL '2 days', NOW() - INTERVAL '2 days', NOW()),
+(4, 1, 9, 'I am excited about this opportunity. Please find my CV attached.', 'emma_watson_cv.docx', 'uploads/emma_watson_cv.docx', 'OFFER', NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days', NOW()),
+(5, 1, 10, 'Hello, I believe I have the right skill set for this team. Please review my profile.', 'ryan_reynolds_resume.pdf', 'uploads/ryan_reynolds_resume.pdf', 'HIRED', NOW() - INTERVAL '4 days', NOW() - INTERVAL '4 days', NOW()),
+(6, 2, 6, 'I am also applying for HR Generalist position to help build great teams.', 'john_doe_hr_cv.pdf', 'uploads/john_doe_hr_cv.pdf', 'REJECTED', NOW() - INTERVAL '1 day', NOW() - INTERVAL '2 days', NOW()),
+(7, 2, 7, 'Applying for the generalist position in Hanoi.', 'jane_miller_generalist_cv.docx', 'uploads/jane_miller_generalist_cv.docx', 'WITHDRAWN', NOW(), NOW() - INTERVAL '1 day', NOW());
+
+SELECT setval('applications_id_seq', 7);
+
+-- 4. APPLICATION NOTES
+INSERT INTO application_notes (id, application_id, author_id, content, created_at) VALUES
+(1, 2, 2, 'Candidate has solid experience in Java, but needs to prove microservice skills during the technical screen.', NOW() - INTERVAL '12 hours'),
+(2, 3, 2, 'Alex showed excellent communication skills during HR screening. Invited to technical round.', NOW() - INTERVAL '1 day');
+
+-- 5. INTERVIEWS
+INSERT INTO interviews (id, application_id, interviewer_id, interview_date, interview_time, location_or_link, status, rating, feedback, evaluated_at, assigned_by, created_at, updated_at) VALUES
+(1, 3, 4, CURRENT_DATE + 2, '10:00:00', 'https://meet.google.com/abc-defg-hij', 'SCHEDULED', NULL, NULL, NULL, 2, NOW(), NOW()),
+(2, 5, 5, CURRENT_DATE, '09:00:00', 'https://meet.google.com/xyz-uvwx-yza', 'EVALUATED', 5, 'Ryan has outstanding problem-solving abilities and exceptional database knowledge. Clear hire.', NOW() - INTERVAL '1 hour', 2, NOW() - INTERVAL '4 days', NOW());
+
+SELECT setval('interviews_id_seq', 2);
+
+-- 6. ACTIVITY LOGS
+INSERT INTO activity_log (id, actor_id, actor_username, event_type, description, ip_address, created_at) VALUES
+(1, 1, 'admin', 'SIGN_IN_SUCCESS', 'Administrator logged in successfully.', '127.0.0.1'::inet, NOW() - INTERVAL '1 hour'),
+(2, 2, 'alice_hr', 'ACCOUNT_CREATED', 'HR Manager account registered.', '127.0.0.1'::inet, NOW() - INTERVAL '5 days'),
+(3, 6, 'johndoe', 'ACCOUNT_CREATED', 'Candidate profile registered.', '127.0.0.1'::inet, NOW() - INTERVAL '2 days');
+
+SELECT setval('activity_log_id_seq', 3);

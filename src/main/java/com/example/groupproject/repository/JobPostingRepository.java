@@ -32,7 +32,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     @Query("""
             SELECT j FROM JobPosting j
             WHERE j.status = :status
-              AND (:createdById IS NULL OR j.createdBy.id = :createdById)
+              AND (cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById)
             ORDER BY CASE WHEN j.applicationDeadline IS NULL THEN 1 ELSE 0 END,
                      j.applicationDeadline ASC,
                      j.title ASC
@@ -44,10 +44,10 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     // Truy vấn danh sách công việc lọc theo điều kiện và scope người tạo
     // CODE MỚI (Đã sửa lỗi)
     @Query("SELECT j FROM JobPosting j WHERE " +
-            "(:createdById IS NULL OR j.createdBy.id = :createdById) AND " +
-            "(:status IS NULL OR j.status = :status) AND " +
-            "(:title IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', CAST(:title AS string), '%'))) AND " +
-            "(:department IS NULL OR j.department = :department) " +
+            "(cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById) AND " +
+            "(cast(:status as string) IS NULL OR j.status = :status) AND " +
+            "(cast(:title as string) IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', cast(:title as string), '%'))) AND " +
+            "(cast(:department as string) IS NULL OR j.department = :department) " +
             "ORDER BY j.updatedAt DESC")
     List<JobPosting> searchJobs(
             @Param("createdById") Integer createdById, // Kiểu Integer khớp với Service và User
@@ -59,7 +59,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     // 2. Lấy danh sách các phòng ban không trùng lặp để đưa vào dropdown filter
     @Query("""
             SELECT DISTINCT j.department FROM JobPosting j
-            WHERE (:createdById IS NULL OR j.createdBy.id = :createdById)
+            WHERE (cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById)
             ORDER BY j.department ASC
             """)
     List<String> findDistinctDepartments(@Param("createdById") Integer createdById);
@@ -67,8 +67,8 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     @Query("""
             SELECT j FROM JobPosting j
             WHERE j.status = :status
-              AND (:department IS NULL OR j.department = :department)
-              AND (:location IS NULL OR j.location = :location)
+              AND (cast(:department as string) IS NULL OR j.department = :department)
+              AND (cast(:location as string) IS NULL OR j.location = :location)
             ORDER BY CASE WHEN j.applicationDeadline IS NULL THEN 1 ELSE 0 END,
                      j.applicationDeadline ASC,
                      j.title ASC

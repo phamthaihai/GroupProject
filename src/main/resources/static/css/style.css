@@ -260,6 +260,7 @@ tr:hover td { background: #fafbfc; }
 
 .alert-success { background: #eafaf1; color: #1e8449; border: 1px solid #a9dfbf; }
 .alert-error { background: #fde8e8; color: #922b21; border: 1px solid #f5b7b1; }
+.alert-info { background: #e8f4fd; color: #1a5276; border: 1px solid #b3d7f5; }
 
 .field-error { color: var(--danger); font-size: 0.8rem; }
 

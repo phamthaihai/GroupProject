@@ -13,6 +13,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.example.groupproject.dto.LoginDTO;
 import com.example.groupproject.entity.User;
@@ -24,13 +25,20 @@ public class LoginController {
     @Autowired
     private AuthService authService;
 
+    @Autowired
+    private com.example.groupproject.repository.InterviewRepository interviewRepository;
+
     @GetMapping("/login")
     public String showFormLogin(
+            @RequestParam(required = false) String redirect,
             @ModelAttribute("msg") String msg,
             @ModelAttribute("err") String err,
             Model model,
             HttpSession session
     ) {
+        if (redirect != null && !redirect.isBlank()) {
+            session.setAttribute("redirectUrl", redirect);
+        }
         User currentUser = authService.getCurrentUser(session);
 
         if (currentUser != null) {
@@ -44,7 +52,11 @@ public class LoginController {
                 return "redirect:/hr/dashboard";
             }
             if (currentUser.getRole() == UserRole.INTERVIEWER) {
-                return "redirect:/candidate/applications";
+                java.util.List<com.example.groupproject.entity.Interview> interviews = interviewRepository.findByInterviewerIdOrderByIdAsc(currentUser.getId());
+                if (!interviews.isEmpty()) {
+                    return "redirect:/applications/" + interviews.get(0).getApplication().getId();
+                }
+                return "redirect:/";
             }
             return "redirect:/";
         }
@@ -82,6 +94,12 @@ public class LoginController {
 
             ra.addFlashAttribute("msg", "Đăng nhập thành công");
 
+            String redirectUrl = (String) session.getAttribute("redirectUrl");
+            if (redirectUrl != null && !redirectUrl.isBlank()) {
+                session.removeAttribute("redirectUrl");
+                return "redirect:" + redirectUrl;
+            }
+
             if (user.getRole() != null) {
                 switch (user.getRole()) {
                     case ADMIN:
@@ -89,7 +107,11 @@ public class LoginController {
                     case HR_MANAGER:
                         return "redirect:/hr/dashboard";    // SCR-06
                     case INTERVIEWER:
-                        return "redirect:/interviewer/applications"; // SCR-17 (Sửa lại route của bạn nếu cần)
+                        java.util.List<com.example.groupproject.entity.Interview> interviews = interviewRepository.findByInterviewerIdOrderByIdAsc(user.getId());
+                        if (!interviews.isEmpty()) {
+                            return "redirect:/applications/" + interviews.get(0).getApplication().getId();
+                        }
+                        return "redirect:/";
                     case CANDIDATE:
                         return "redirect:/candidate/applications";   // SCR-15
                     default:
@@ -117,6 +139,11 @@ public class LoginController {
             // Dự phòng các lỗi hệ thống không lường trước khác
             return "redirect:/login?error=generic";
         }
+    }
+
+    @GetMapping("/logout")
+    public String logoutGet(HttpSession session, RedirectAttributes ra) {
+        return logout(session, ra);
     }
 
     @PostMapping("/logout")

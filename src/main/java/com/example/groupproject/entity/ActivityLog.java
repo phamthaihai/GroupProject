@@ -21,13 +21,14 @@ public class ActivityLog {
     private String actorUsername;
 
     @Enumerated(EnumType.STRING)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(name = "event_type", nullable = false, length = 50)
     private ActivityEventType eventType;
 
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Column(name = "ip_address", length = 45)
+    @Column(name = "ip_address", columnDefinition = "inet", insertable = false, updatable = false)
     private String ipAddress;
 
     @Column(name = "created_at", nullable = false, updatable = false)
