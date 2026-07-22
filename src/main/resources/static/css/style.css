@@ -327,3 +327,71 @@ tr:hover td { background: #fafbfc; }
     .form-grid { grid-template-columns: 1fr; }
     .profile-grid { grid-template-columns: 1fr; }
 }
+
+/* Public Job Card Layout (SCR-13) */
+.public-job-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.public-job-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    margin-bottom: 0; /* Override general .card margin-bottom */
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
+}
+
+.public-job-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(30, 58, 95, 0.12);
+    border-color: var(--primary-light);
+}
+
+.public-job-card-body {
+    flex-grow: 1;
+}
+
+.public-job-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+}
+
+.public-job-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.public-job-meta-item {
+    font-size: 0.9rem;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.public-meta-label {
+    font-weight: 600;
+    color: var(--muted);
+}
+
+.public-meta-value {
+    color: var(--text);
+}
+
+.public-job-btn {
+    align-self: flex-start;
+    margin-top: auto;
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+}
