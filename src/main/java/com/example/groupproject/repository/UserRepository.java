@@ -36,18 +36,12 @@ public interface UserRepository extends JpaRepository<User, Integer> {
      * @param role   lọc theo role, null = bỏ qua
      * @param status lọc theo status, null = bỏ qua
      */
-    @Query("""
-            SELECT u FROM User u
-            WHERE (cast(:search as string) IS NULL OR :search = ''
-                   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', cast(:search as string), '%'))
-                   OR LOWER(u.email) LIKE LOWER(CONCAT('%', cast(:search as string), '%')))
-              AND (cast(:role as string) IS NULL OR u.role = :role)
-              AND (cast(:status as string) IS NULL OR u.status = :status)
-            ORDER BY u.createdAt DESC
-            """)
-    List<User> searchUsers(@Param("search") String search,
-                           @Param("role") UserRole role,
-                           @Param("status") UserStatus status);
+    @Query("SELECT u FROM User u WHERE " +
+            "(cast(:role as string) IS NULL OR u.role = :role) AND " +
+            "(cast(:status as string) IS NULL OR u.status = :status) " +
+            "ORDER BY u.createdAt DESC")
+    List<User> findByRoleAndStatusFiltered(@Param("role") UserRole role,
+                                           @Param("status") UserStatus status);
 
 
         Optional<User> findByEmail(String email);

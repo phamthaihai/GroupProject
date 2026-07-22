@@ -45,22 +45,19 @@ public class DataInitializer implements ApplicationRunner {
         admin.setPasswordHash(passwordEncoder.encode(DEFAULT_ADMIN_PASSWORD));
         admin.setRole(UserRole.ADMIN);
         admin.setStatus(UserStatus.ACTIVE);
-
-        userRepository.save(admin);
-        // ... code tạo admin ở trên ...
         userRepository.save(admin);
 
-        // --- THÊM ĐOẠN NÀY ĐỂ TẠO ỨNG VIÊN TEST ---
-        User candidate = new User();
-        candidate.setFullName("Ứng viên Test");
-        candidate.setUsername("testuser");
-        candidate.setEmail("test@gmail.com");
-        candidate.setPasswordHash("abc"); // Dùng setPassword theo tên cột trong DB của bạn
-        candidate.setRole(UserRole.CANDIDATE);
-        candidate.setStatus(UserStatus.ACTIVE);
-        candidate.setFailedLoginCount((short) 0); // Bắt buộc vì DB yêu cầu not-null
-        candidate.setEmailVerified(true); // Bắt buộc vì DB yêu cầu not-null
-        userRepository.save(candidate);
-        // ------------------------------------------
+//        // --- THÊM ĐOẠN NÀY ĐỂ TẠO ỨNG VIÊN TEST ---
+//        User candidate = new User();
+//        candidate.setFullName("Ứng viên Test");
+//        candidate.setUsername("testuser");
+//        candidate.setEmail("test@gmail.com");
+//        candidate.setPasswordHash("abc"); // Dùng setPassword theo tên cột trong DB của bạn
+//        candidate.setRole(UserRole.CANDIDATE);
+//        candidate.setStatus(UserStatus.ACTIVE);
+//        candidate.setFailedLoginCount((short) 0); // Bắt buộc vì DB yêu cầu not-null
+//        candidate.setEmailVerified(true); // Bắt buộc vì DB yêu cầu not-null
+//        userRepository.save(candidate);
+//        // ------------------------------------------
     }
 }

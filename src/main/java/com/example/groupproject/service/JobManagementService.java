@@ -33,9 +33,17 @@ public class JobManagementService {
         // 1. Phân quyền: Nếu là HR_MANAGER thì chỉ lấy job của họ, ADMIN thì lấy hết (truyền createdById = null)
         Integer createdById = (currentUser.getRole() == UserRole.ADMIN) ? null : currentUser.getId();
 
-        List<JobPosting> postings = jobRepo.searchJobs(createdById, status, keyword, department);
+        List<JobPosting> postings = jobRepo.searchJobs(createdById, status, department);
 
-        // 2. Map sang DTO JobListRow và đếm số lượng apply
+        // 2. Nếu có keyword (từ search) -> lọc chuỗi ở đây bằng Java để tránh lỗi collations SQL
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            String lower = keyword.toLowerCase(java.util.Locale.ROOT);
+            postings = postings.stream()
+                    .filter(p -> p.getTitle() != null && p.getTitle().toLowerCase(java.util.Locale.ROOT).contains(lower))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+
+        // 3. Map sang DTO JobListRow và đếm số lượng apply
         return postings.stream().map(post -> {
             long appCount = appRepo.countByJobId(post.getId());
             return new JobListRow(

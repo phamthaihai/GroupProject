@@ -21,7 +21,6 @@ public class ActivityLogDisplayView {
     private String actorUsername;
 
     @Enumerated(EnumType.STRING)
-    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(name = "event_type", nullable = false, length = 50)
     private ActivityEventType eventType;
 

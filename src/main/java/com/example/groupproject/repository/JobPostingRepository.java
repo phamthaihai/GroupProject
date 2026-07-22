@@ -46,13 +46,11 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     @Query("SELECT j FROM JobPosting j WHERE " +
             "(cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById) AND " +
             "(cast(:status as string) IS NULL OR j.status = :status) AND " +
-            "(cast(:title as string) IS NULL OR LOWER(j.title) LIKE LOWER(CONCAT('%', cast(:title as string), '%'))) AND " +
             "(cast(:department as string) IS NULL OR j.department = :department) " +
             "ORDER BY j.updatedAt DESC")
     List<JobPosting> searchJobs(
             @Param("createdById") Integer createdById, // Kiểu Integer khớp với Service và User
             @Param("status") JobStatus status,      // Hoặc String tùy entity của bạn
-            @Param("title") String title,
             @Param("department") String department
     );
 

@@ -33,11 +33,15 @@ public class UserManagementService {
 
     @Transactional(readOnly = true)
     public List<User> searchUsers(String search, UserRole role, UserStatus status) {
-        return userRepository.searchUsers(
-                search != null ? search.trim() : null,
-                role,
-                status
-        );
+        List<User> users = userRepository.findByRoleAndStatusFiltered(role, status);
+        if (search == null || search.trim().isEmpty()) {
+            return users;
+        }
+        String lower = search.trim().toLowerCase(java.util.Locale.ROOT);
+        return users.stream()
+                .filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase(java.util.Locale.ROOT).contains(lower))
+                        || (u.getEmail() != null && u.getEmail().toLowerCase(java.util.Locale.ROOT).contains(lower)))
+                .toList();
     }
 
     @Transactional

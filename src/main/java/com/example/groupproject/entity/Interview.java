@@ -33,7 +33,7 @@ public class Interview {
     private String locationOrLink;
 
     @Enumerated(EnumType.STRING)
-    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
+//    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.NAMED_ENUM)
     @Column(nullable = false, length = 20)
     private InterviewStatus status = InterviewStatus.SCHEDULED;
 
