@@ -1,16 +1,21 @@
 package com.example.groupproject.service;
 
+import com.example.groupproject.dto.ApplicationDetailDTO;
 import com.example.groupproject.dto.ApplicationForm;
 import com.example.groupproject.entity.Application;
+import com.example.groupproject.entity.Interview;
 import com.example.groupproject.entity.JobPosting;
 import com.example.groupproject.entity.User;
 import com.example.groupproject.entity.enums.ApplicationStatus;
-import com.example.groupproject.repository.ApplicationRepository;
-import com.example.groupproject.repository.JobPostingRepository;
+import com.example.groupproject.entity.enums.InterviewStatus;
 import com.example.groupproject.repository.ActivityLogRepository;
+import com.example.groupproject.repository.ApplicationRepository;
+import com.example.groupproject.repository.InterviewRepository;
+import com.example.groupproject.repository.JobPostingRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -21,15 +26,18 @@ public class ApplicationService {
     private final JobPostingRepository jobPostingRepository;
     private final FileStorageService fileStorageService;
     private final ActivityLogRepository activityLogRepository;
+    private final InterviewRepository interviewRepository; // Inject thêm InterviewRepository
 
     public ApplicationService(ApplicationRepository applicationRepository,
                               JobPostingRepository jobPostingRepository,
                               FileStorageService fileStorageService,
-                              ActivityLogRepository activityLogRepository) {
+                              ActivityLogRepository activityLogRepository,
+                              InterviewRepository interviewRepository) {
         this.applicationRepository = applicationRepository;
         this.jobPostingRepository = jobPostingRepository;
         this.fileStorageService = fileStorageService;
         this.activityLogRepository = activityLogRepository;
+        this.interviewRepository = interviewRepository;
     }
 
     public boolean hasApplied(Integer jobId, Integer candidateId) {
@@ -93,7 +101,6 @@ public class ApplicationService {
         app.setStatusChangedAt(java.time.Instant.now());
         applicationRepository.save(app);
 
-        // Create ActivityLog record
         com.example.groupproject.entity.ActivityLog log = new com.example.groupproject.entity.ActivityLog();
         log.setActor(candidate);
         log.setActorUsername(candidate.getUsername());
@@ -107,7 +114,7 @@ public class ApplicationService {
                 .orElseThrow(() -> new IllegalArgumentException("Job posting not found"));
 
         if (currentUser.getRole() != com.example.groupproject.entity.enums.UserRole.ADMIN) {
-            if (currentUser.getRole() != com.example.groupproject.entity.enums.UserRole.HR_MANAGER 
+            if (currentUser.getRole() != com.example.groupproject.entity.enums.UserRole.HR_MANAGER
                     || !job.getCreatedBy().getId().equals(currentUser.getId())) {
                 throw new org.springframework.web.server.ResponseStatusException(
                         org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
@@ -132,5 +139,62 @@ public class ApplicationService {
             counts.put(status.name(), count);
         }
         return counts;
+    }
+
+    // =========================================================================
+    // BỔ SUNG MỚI: LẤY DỮ LIỆU CHI TIẾT ĐƠN ỨNG TUYỂN (SCR-17 / SCR-18)
+    // =========================================================================
+    public ApplicationDetailDTO getApplicationDetail(Integer applicationId, User currentUser) {
+        Application app = applicationRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("Application not found"));
+
+        ApplicationDetailDTO dto = new ApplicationDetailDTO();
+        dto.setApplicationId(app.getId() != null ? app.getId().longValue() : null);
+        dto.setCandidateName(app.getCandidate() != null ? app.getCandidate().getFullName() : "N/A");
+        dto.setCandidateEmail(app.getCandidate() != null ? app.getCandidate().getEmail() : "N/A");
+        dto.setCvUrl(app.getCvStoragePath());
+        dto.setStatus(app.getStatus() != null ? app.getStatus().name() : "");
+        dto.setSubmissionDate(app.getSubmittedAt());
+
+        // 1. Lấy danh sách Lịch phỏng vấn (Interviews) thuộc đơn này
+        List<Interview> interviewList = interviewRepository.findByApplicationId(applicationId);
+        List<ApplicationDetailDTO.InterviewDTO> interviewDTOs = new ArrayList<>();
+        List<ApplicationDetailDTO.EvaluationDTO> evaluationDTOs = new ArrayList<>();
+
+        for (Interview itv : interviewList) {
+            // Map vào danh sách Lịch phỏng vấn cho HR/Admin xem
+            ApplicationDetailDTO.InterviewDTO itvDto = new ApplicationDetailDTO.InterviewDTO();
+            itvDto.setId(itv.getId() != null ? itv.getId().longValue() : null);
+            itvDto.setInterviewerName(itv.getInterviewer() != null ? itv.getInterviewer().getFullName() : "N/A");
+            itvDto.setInterviewDate(itv.getInterviewDate());
+            itvDto.setInterviewTime(itv.getInterviewTime());
+            itvDto.setLocationOrLink(itv.getLocationOrLink());
+            itvDto.setStatus(itv.getStatus() != null ? itv.getStatus().name() : "SCHEDULED");
+            interviewDTOs.add(itvDto);
+
+            // Nếu buổi phỏng vấn đã đánh giá xong, map vào danh sách Evaluation
+            if (itv.getStatus() == InterviewStatus.EVALUATED) {
+                ApplicationDetailDTO.EvaluationDTO evalDto = new ApplicationDetailDTO.EvaluationDTO();
+                evalDto.setInterviewerName(itv.getInterviewer() != null ? itv.getInterviewer().getFullName() : "N/A");
+                evalDto.setRating(itv.getRating() != null ? itv.getRating().intValue() : 0);
+                evalDto.setFeedback(itv.getFeedback());
+                evalDto.setEvaluatedAt(itv.getEvaluatedAt());
+                evaluationDTOs.add(evalDto);
+            }
+
+            // Nếu user đăng nhập là Interviewer của buổi phỏng vấn này -> Set thông tin riêng
+            if (currentUser != null && itv.getInterviewer() != null
+                    && itv.getInterviewer().getId().equals(currentUser.getId())) {
+                dto.setInterviewId(itv.getId() != null ? itv.getId().longValue() : null);
+                dto.setInterviewStatus(itv.getStatus() != null ? itv.getStatus().name() : "SCHEDULED");
+                dto.setMyRating(itv.getRating() != null ? itv.getRating().intValue() : null);
+                dto.setMyFeedback(itv.getFeedback());
+            }
+        }
+
+        dto.setInterviews(interviewDTOs);
+        dto.setEvaluations(evaluationDTOs);
+
+        return dto;
     }
 }

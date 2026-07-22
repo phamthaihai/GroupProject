@@ -1,27 +1,32 @@
 package com.example.groupproject.controller;
 
 import com.example.groupproject.dto.InterviewAssignmentDTO;
+import com.example.groupproject.entity.ActivityLog;
 import com.example.groupproject.entity.Application;
 import com.example.groupproject.entity.Interview;
 import com.example.groupproject.entity.User;
+import com.example.groupproject.entity.enums.ActivityEventType;
+import com.example.groupproject.entity.enums.InterviewStatus;
 import com.example.groupproject.entity.enums.UserRole;
 import com.example.groupproject.entity.enums.UserStatus;
+import com.example.groupproject.repository.ActivityLogRepository;
 import com.example.groupproject.repository.ApplicationRepository;
 import com.example.groupproject.repository.InterviewRepository;
 import com.example.groupproject.repository.UserRepository;
 import com.example.groupproject.service.AuthService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import org.springframework.transaction.annotation.Transactional;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import com.example.groupproject.repository.ActivityLogRepository;
-import com.example.groupproject.entity.ActivityLog;
-import com.example.groupproject.entity.enums.ActivityEventType;
 
 @Controller
 @Transactional
@@ -43,34 +48,58 @@ public class InterviewController {
         this.activityLogRepository = activityLogRepository;
     }
 
-    // 1. HIỆN FORM ASSIGN
-    @GetMapping("/interview/assign/{applicationId}")
-    public String showAssignForm(@PathVariable Integer applicationId, Model model) {
+    // 1. HIỆN FORM ASSIGN (SCR-18)
+    @GetMapping({"/hr/applications/{applicationId}/assign", "/interview/assign/{applicationId}"})
+    public String showAssignForm(@PathVariable Integer applicationId, HttpSession session, Model model, RedirectAttributes redirect) {
+        User currentUser = authService.getCurrentUser(session);
+        if (currentUser == null) return "redirect:/login";
+
+        boolean hasPermission = authService.hasAnyRole(currentUser, UserRole.ADMIN, UserRole.HR_MANAGER);
+        if (!hasPermission) {
+            redirect.addFlashAttribute("errorMessage", "Bạn không có quyền thực hiện thao tác này.");
+            return "redirect:/applications/" + applicationId;
+        }
+
         Application app = applicationRepository.findById(applicationId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid ID"));
 
-        if (app.getCandidate() != null) app.getCandidate().getFullName();
-        if (app.getJob() != null) app.getJob().getTitle();
-
         List<User> interviewers = userRepository.findByRoleAndStatusOrderByFullNameAsc(UserRole.INTERVIEWER, UserStatus.ACTIVE);
+
         model.addAttribute("app", app);
         model.addAttribute("interviewers", interviewers);
 
         InterviewAssignmentDTO dto = new InterviewAssignmentDTO();
         dto.setApplicationId(applicationId);
+        if (app.getCandidate() != null) dto.setCandidateName(app.getCandidate().getFullName());
+        if (app.getJob() != null) dto.setJobTitle(app.getJob().getTitle());
+
         model.addAttribute("assignment", dto);
 
         return "hr/assign-interview";
     }
 
-    // 2. XỬ LÝ LƯU PHỎNG VẤN
+    // 2. XỬ LÝ LƯU PHỎNG VẤN (SCR-18)
     @PostMapping("/interview/assign")
-    public String processAssignment(@ModelAttribute InterviewAssignmentDTO dto,
-                                    HttpSession session, RedirectAttributes redirect) {
+    public String processAssignment(@ModelAttribute("assignment") InterviewAssignmentDTO dto,
+                                    HttpSession session,
+                                    Model model,
+                                    RedirectAttributes redirect) {
         User currentUser = authService.getCurrentUser(session);
         if (currentUser == null) return "redirect:/login";
 
         LocalDate interviewDate = dto.getInterviewDate();
+
+        if (interviewDate != null && interviewDate.isBefore(LocalDate.now())) {
+            Application app = applicationRepository.findById(dto.getApplicationId())
+                    .orElseThrow(() -> new IllegalArgumentException("Invalid ID"));
+            List<User> interviewers = userRepository.findByRoleAndStatusOrderByFullNameAsc(UserRole.INTERVIEWER, UserStatus.ACTIVE);
+
+            model.addAttribute("app", app);
+            model.addAttribute("interviewers", interviewers);
+            model.addAttribute("dateError", "Interview must be scheduled for a future date and time.");
+            return "hr/assign-interview";
+        }
+
         LocalTime interviewTime = LocalTime.parse(dto.getInterviewTime());
 
         Application app = applicationRepository.findById(dto.getApplicationId())
@@ -87,56 +116,93 @@ public class InterviewController {
         interview.setAssignedBy(currentUser);
 
         interviewRepository.save(interview);
+
+        redirect.addFlashAttribute("successMessage",
+                "Interview scheduled. " + interviewer.getFullName() + " has been assigned.");
+
         return "redirect:/applications/" + dto.getApplicationId();
     }
 
-    // 3. HIỆN FORM ĐÁNH GIÁ (SCR-19)
+    // 3. HIỆN FORM ĐÁNH GIÁ (SCR-19) - ĐÃ CỦNG CỐ CHECK QUYỀN VÀ SPEC
     @GetMapping("/interview/evaluate/{interviewId}")
-    public String showEvaluateForm(@PathVariable Integer interviewId, Model model) {
+    public String showEvaluateForm(@PathVariable Integer interviewId, HttpSession session, Model model, RedirectAttributes redirect) {
+        User currentUser = authService.getCurrentUser(session);
+        if (currentUser == null) return "redirect:/login";
+
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid Interview ID"));
 
-        if (interview.getApplication() != null) {
-            interview.getApplication().getCandidate().getFullName();
-            interview.getApplication().getJob().getTitle();
+        // SPEC CHECK 1: Interviewer not assigned to this application -> "Access denied"
+        boolean isAssigned = (interview.getInterviewer() != null && interview.getInterviewer().getId().equals(currentUser.getId()))
+                || currentUser.getRole() == UserRole.ADMIN;
+
+        if (!isAssigned) {
+            redirect.addFlashAttribute("errorMessage", "Access denied");
+            return "redirect:/applications/" + (interview.getApplication() != null ? interview.getApplication().getId() : "");
         }
 
-        boolean isEvaluated = (interview.getStatus() == com.example.groupproject.entity.enums.InterviewStatus.EVALUATED);
+        boolean isEvaluated = (interview.getStatus() == InterviewStatus.EVALUATED);
+
+        // Format ngày gửi đánh giá hiển thị ở dạng Read-only nếu đã submit
+        String formattedEvaluatedDate = "";
+        if (isEvaluated && interview.getEvaluatedAt() != null) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")
+                    .withZone(ZoneId.systemDefault());
+            formattedEvaluatedDate = formatter.format(interview.getEvaluatedAt());
+        }
+
         model.addAttribute("interview", interview);
         model.addAttribute("isEvaluated", isEvaluated);
+        model.addAttribute("evaluatedDate", formattedEvaluatedDate);
 
         return "hr/evaluate-interview";
     }
 
-    // 4. XỬ LÝ LƯU ĐÁNH GIÁ (Giữ nguyên trạng thái Application để không lỗi DB)
+    // 4. XỬ LÝ LƯU ĐÁNH GIÁ (SCR-19) - ĐÃ CỦNG CỐ CẢNH BÁO VÀ IMMUTABLE
     @PostMapping("/interview/evaluate")
     public String processEvaluation(@RequestParam Integer interviewId,
                                     @RequestParam Short rating,
                                     @RequestParam String feedback,
-                                    jakarta.servlet.http.HttpSession session,
+                                    HttpSession session,
                                     RedirectAttributes redirect) {
         User currentUser = authService.getCurrentUser(session);
+        if (currentUser == null) return "redirect:/login";
+
         Interview interview = interviewRepository.findById(interviewId)
                 .orElseThrow(() -> new IllegalArgumentException("Invalid ID"));
 
-        // Chỉ cập nhật Interview, KHÔNG cập nhật Application status để tránh lỗi constraint
+        // SPEC CHECK 1: Security check
+        boolean isAssigned = (interview.getInterviewer() != null && interview.getInterviewer().getId().equals(currentUser.getId()))
+                || currentUser.getRole() == UserRole.ADMIN;
+        if (!isAssigned) {
+            redirect.addFlashAttribute("errorMessage", "Access denied");
+            return "redirect:/applications/" + interview.getApplication().getId();
+        }
+
+        // SPEC CHECK 2: Immutable check (Nếu đã EVALUATED thì không cho sửa nữa)
+        if (interview.getStatus() == InterviewStatus.EVALUATED) {
+            redirect.addFlashAttribute("errorMessage", "Evaluation has already been submitted and cannot be modified.");
+            return "redirect:/applications/" + interview.getApplication().getId();
+        }
+
+        // Save evaluation
         interview.setRating(rating);
-        interview.setFeedback(feedback);
-        interview.setEvaluatedAt(java.time.Instant.now());
-        interview.setStatus(com.example.groupproject.entity.enums.InterviewStatus.EVALUATED);
+        interview.setFeedback(feedback.trim());
+        interview.setEvaluatedAt(Instant.now());
+        interview.setStatus(InterviewStatus.EVALUATED);
 
         interviewRepository.save(interview);
 
-        if (currentUser != null) {
-            ActivityLog log = new ActivityLog();
-            log.setActor(currentUser);
-            log.setActorUsername(currentUser.getUsername());
-            log.setEventType(ActivityEventType.EVALUATION_SUBMITTED);
-            log.setDescription("Submitted evaluation for interview ID: " + interviewId + " with rating " + rating);
-            activityLogRepository.save(log);
-        }
+        // Save ActivityLog
+        ActivityLog log = new ActivityLog();
+        log.setActor(currentUser);
+        log.setActorUsername(currentUser.getUsername());
+        log.setEventType(ActivityEventType.EVALUATION_SUBMITTED);
+        log.setDescription("Submitted evaluation for interview ID: " + interviewId + " with rating " + rating);
+        activityLogRepository.save(log);
 
-        redirect.addFlashAttribute("message", "Evaluation submitted.");
+        // SPEC FLASH MESSAGE: "Evaluation submitted. Thank you."
+        redirect.addFlashAttribute("successMessage", "Evaluation submitted. Thank you.");
         return "redirect:/applications/" + interview.getApplication().getId();
     }
 }

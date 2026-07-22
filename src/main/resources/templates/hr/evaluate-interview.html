@@ -1,58 +1,123 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Đánh giá phỏng vấn</title>
+<head th:replace="~{fragments/layout :: head('Evaluation Form - TalentHub')}">
+    <title>Evaluation Form (SCR-19)</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
+<header th:replace="~{fragments/layout :: header}"></header>
 
-<div class="container mt-5">
-    <div class="card shadow-sm" style="max-width: 600px; margin: auto;">
+<div class="container my-5">
+    <div class="card shadow-sm" style="max-width: 650px; margin: auto;">
         <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Đánh giá ứng viên</h4>
+            <h4 class="mb-0">Interview Evaluation</h4>
         </div>
         <div class="card-body">
-            <div class="mb-4 bg-light p-3 rounded">
-                <p><strong>Ứng viên:</strong> <span th:text="${interview.application.candidate.fullName}"></span></p>
-                <p><strong>Vị trí:</strong> <span th:text="${interview.application.job.title}"></span></p>
-                <p><strong>Thời gian:</strong> <span th:text="${interview.interviewDate + ' ' + interview.interviewTime}"></span></p>
+
+            <!-- CONTEXT HEADER (READ-ONLY CONTEXT) -->
+            <div class="mb-4 bg-light p-3 rounded border">
+                <p class="mb-1"><strong>Candidate Name:</strong> <span th:text="${interview.application != null && interview.application.candidate != null ? interview.application.candidate.fullName : 'N/A'}"></span></p>
+                <p class="mb-1"><strong>Job Title:</strong> <span th:text="${interview.application != null && interview.application.job != null ? interview.application.job.title : 'N/A'}"></span></p>
+                <p class="mb-0">
+                    <strong>Scheduled Interview Date/Time:</strong>
+                    <span th:text="${interview.interviewDate != null ? #temporals.format(interview.interviewDate, 'dd/MM/yyyy') : ''}"></span>
+                    <span th:text="${interview.interviewTime}"></span>
+                </p>
             </div>
 
-            <form th:action="@{/interview/evaluate}" method="post">
-                <input type="hidden" name="interviewId" th:value="${interview.id}">
+            <!-- CASE 1: ĐÃ SUBMIT EVALUATION (READ-ONLY VIEW ACCORDING TO SPEC) -->
+            <div th:if="${isEvaluated}">
+                <div class="alert alert-info">
+                    <strong>Notice:</strong> You submitted this evaluation<span th:if="${evaluatedDate != null && !evaluatedDate.isEmpty()}" th:text="' on ' + ${evaluatedDate}"></span>.
+                </div>
 
-                <div class="form-group">
-                    <label><strong>Chấm điểm (1-5 sao):</strong></label>
-                    <div class="star-rating">
-                        <select name="rating" class="form-control" th:disabled="${isEvaluated}" required>
-                            <option value="5">5 sao</option>
-                            <option value="4">4 sao</option>
-                            <option value="3">3 sao</option>
-                            <option value="2">2 sao</option>
-                            <option value="1">1 sao</option>
-                        </select>
+                <div class="form-group mb-3">
+                    <label class="font-weight-bold">Rating:</label>
+                    <div class="text-warning h4 mb-0">
+                        <span th:each="i : ${#numbers.sequence(1, 5)}"
+                              th:text="${i <= interview.rating ? '★' : '☆'}"></span>
+                        <span class="text-dark h6 ml-2" th:text="'(' + ${interview.rating} + ' / 5 stars)'"></span>
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label><strong>Viết nhận xét:</strong></label>
-                    <textarea name="feedback" class="form-control" rows="4"
-                              th:text="${isEvaluated ? interview.feedback : ''}"
-                              th:readonly="${isEvaluated}" required></textarea>
-                </div>
-
-                <div th:if="${!isEvaluated}" class="alert alert-warning">
-                    <small>Cảnh báo: Sau khi gửi, đánh giá này không thể chỉnh sửa.</small>
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">Written Feedback:</label>
+                    <div class="p-3 bg-light border rounded" style="white-space: pre-line;" th:text="${interview.feedback}"></div>
                 </div>
 
                 <div class="text-right">
-                    <a th:href="@{'/applications/' + ${interview.application.id}}" class="btn btn-secondary">Quay lại</a>
-                    <button type="submit" class="btn btn-primary" th:if="${!isEvaluated}">Gửi đánh giá</button>
+                    <a th:href="@{'/applications/' + ${interview.application.id}}" class="btn btn-secondary">Back to Application Detail</a>
+                </div>
+            </div>
+
+            <!-- CASE 2: CHƯA SUBMIT (EVALUATION FORM ACCORDING TO SPEC) -->
+            <form th:if="${!isEvaluated}" th:action="@{/interview/evaluate}" method="post">
+                <input type="hidden" name="interviewId" th:value="${interview.id}">
+
+                <!-- STAR RATING SELECTOR (1-5 STARS) -->
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">Rating Selector <span class="text-danger">*</span></label>
+                    <div class="star-rating-input d-flex flex-row-reverse justify-content-end align-items-center">
+                        <input type="radio" id="star5" name="rating" value="5" required/><label for="star5" title="5 stars">★</label>
+                        <input type="radio" id="star4" name="rating" value="4" /><label for="star4" title="4 stars">★</label>
+                        <input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="3 stars">★</label>
+                        <input type="radio" id="star2" name="rating" value="2" /><label for="star2" title="2 stars">★</label>
+                        <input type="radio" id="star1" name="rating" value="1" /><label for="star1" title="1 star">★</label>
+                    </div>
+                    <small class="form-text text-muted">Click a star to select rating (1 to 5 stars).</small>
+                </div>
+
+                <!-- WRITTEN FEEDBACK TEXTAREA -->
+                <div class="form-group mb-4">
+                    <label class="font-weight-bold">Written Feedback <span class="text-danger">*</span></label>
+                    <textarea name="feedback" class="form-control" rows="5"
+                              placeholder="Enter detailed evaluation feedback for this candidate..." required></textarea>
+                </div>
+
+                <!-- CONFIRMATION NOTICE ACCORDING TO SPEC -->
+                <div class="alert alert-warning py-2 mb-4">
+                    <small class="font-weight-bold">Confirmation Notice:</small>
+                    <small class="d-block">Once submitted, your evaluation cannot be edited or withdrawn.</small>
+                </div>
+
+                <!-- FORM BUTTONS -->
+                <div class="d-flex justify-content-between align-items-center">
+                    <!-- CANCEL BUTTON -> SCR-17 -->
+                    <a th:href="@{'/applications/' + ${interview.application.id}}" class="btn btn-secondary">Cancel</a>
+
+                    <!-- SUBMIT EVALUATION BUTTON -->
+                    <button type="submit" class="btn btn-primary font-weight-bold">Submit Evaluation</button>
                 </div>
             </form>
+
         </div>
     </div>
 </div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- CSS HỖ TRỢ STAR RATING CHO FORM CHẤM ĐIỂM -->
+<style>
+    .star-rating-input {
+        font-size: 2rem;
+        line-height: 1;
+    }
+    .star-rating-input input {
+        display: none;
+    }
+    .star-rating-input label {
+        color: #ddd;
+        cursor: pointer;
+        margin-bottom: 0;
+        padding: 0 0.1rem;
+        transition: color 0.2s ease-in-out;
+    }
+    .star-rating-input input:checked ~ label,
+    .star-rating-input label:hover,
+    .star-rating-input label:hover ~ label {
+        color: #ffc107;
+    }
+</style>
 
 </body>
 </html>

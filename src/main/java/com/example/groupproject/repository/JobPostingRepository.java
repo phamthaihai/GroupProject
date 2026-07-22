@@ -5,13 +5,18 @@ import com.example.groupproject.entity.enums.JobStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
 /**
  * Repository cho entity JobPosting.
  */
+@Repository
 public interface JobPostingRepository extends JpaRepository<JobPosting, Integer> {
+
+    /** Tìm danh sách job theo ID người tạo (created_by_id) */
+    List<JobPosting> findByCreatedById(Integer createdById);
 
     /** Đếm job theo status — dùng cho dashboard stats */
     long countByStatus(JobStatus status);
@@ -40,9 +45,7 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
     List<JobPosting> findActiveJobs(@Param("status") JobStatus status,
                                     @Param("createdById") Integer createdById);
 
-
     // Truy vấn danh sách công việc lọc theo điều kiện và scope người tạo
-    // CODE MỚI (Đã sửa lỗi)
     @Query("SELECT j FROM JobPosting j WHERE " +
             "(cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById) AND " +
             "(cast(:status as string) IS NULL OR j.status = :status) AND " +
@@ -50,13 +53,13 @@ public interface JobPostingRepository extends JpaRepository<JobPosting, Integer>
             "(cast(:department as string) IS NULL OR j.department = :department) " +
             "ORDER BY j.updatedAt DESC")
     List<JobPosting> searchJobs(
-            @Param("createdById") Integer createdById, // Kiểu Integer khớp với Service và User
-            @Param("status") JobStatus status,      // Hoặc String tùy entity của bạn
+            @Param("createdById") Integer createdById,
+            @Param("status") JobStatus status,
             @Param("title") String title,
             @Param("department") String department
     );
 
-    // 2. Lấy danh sách các phòng ban không trùng lặp để đưa vào dropdown filter
+    // Lấy danh sách các phòng ban không trùng lặp để đưa vào dropdown filter
     @Query("""
             SELECT DISTINCT j.department FROM JobPosting j
             WHERE (cast(:createdById as integer) IS NULL OR j.createdBy.id = :createdById)

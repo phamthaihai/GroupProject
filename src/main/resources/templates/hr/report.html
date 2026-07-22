@@ -1,45 +1,165 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>Pipeline Report</title>
+<head th:replace="~{fragments/layout :: head('Pipeline Report - TalentHub')}">
+    <title>Pipeline Report (SCR-20)</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
-<div class="container mt-5">
-    <h3>Pipeline Report</h3>
-    <hr>
+<header th:replace="~{fragments/layout :: header}"></header>
 
-    <div class="row mb-4">
-        <div th:each="item : ${statusCounts}" class="col-md-2">
-            <div class="card text-center p-3 shadow-sm">
-                <h6 class="text-muted" th:text="${item[0]}">Trạng thái</h6>
-                <h4 class="font-weight-bold" th:text="${item[1]}">0</h4>
+<div class="container my-5">
+
+    <!-- HEADER & BREADCRUMB -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>Pipeline Report</h3>
+        <!-- Export Button (FT-27 Scope) -->
+        <a th:if="${enableExport != null && enableExport}"
+           th:href="@{/hr/report/{id}/export(id=${selectedJobId})}"
+           class="btn btn-outline-secondary btn-sm">Export Report (CSV)</a>
+    </div>
+
+    <!-- JOB SELECTOR DROPDOWN (Chỉ hiện khi đi từ Dashboard SCR-06) -->
+    <div th:if="${jobs != null && !jobs.isEmpty()}" class="card shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form th:action="@{/hr/report}" method="get" class="form-inline">
+                <label class="mr-2 font-weight-bold">Select Job Posting:</label>
+                <select name="jobId" class="form-control mr-2" onchange="this.form.submit()">
+                    <option th:each="job : ${jobs}"
+                            th:value="${job.id}"
+                            th:text="${job.title}"
+                            th:selected="${job.id == selectedJobId}">
+                    </option>
+                </select>
+            </form>
+        </div>
+    </div>
+
+    <!-- DISPLAY CONDITION: KHÔNG CÓ ỨNG VIÊN NÀO -->
+    <div th:if="${applications == null || applications.isEmpty()}" class="alert alert-warning text-center py-5 shadow-sm">
+        <h5 class="mb-0">No applications have been received for this job posting yet.</h5>
+    </div>
+
+    <!-- DISPLAY CONDITION: CÓ ỨNG VIÊN (HIỂN THỊ CHART VÀ BẢNG) -->
+    <div th:if="${applications != null && !applications.isEmpty()}">
+
+        <!-- 1. PIPELINE STAGE BREAKDOWN (HORIZONTAL BAR CHART ACCORDING TO SPEC) -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white font-weight-bold">
+                Pipeline Stage Breakdown
+            </div>
+            <div class="card-body">
+                <div style="height: 250px; position: relative;">
+                    <canvas id="pipelineChart"></canvas>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="card shadow-sm">
-        <div class="card-body">
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th>Tên ứng viên</th>
-                    <th>Trạng thái</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr th:each="app : ${applications}">
-                    <td th:text="${app.candidate.fullName}"></td>
-                    <td><span class="badge badge-info" th:text="${app.status}"></span></td>
-                </tr>
-                </tbody>
-            </table>
+        <!-- 2. CANDIDATE TABLE ACCORDING TO SPEC -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-white font-weight-bold">
+                Candidates List
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="thead-light">
+                        <tr>
+                            <th>Candidate Full Name</th>
+                            <th>Current Stage</th>
+                            <th>Days in Stage</th>
+                            <th>Assigned Interviewer</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr th:each="app : ${applications}">
+                            <!-- Candidate Name -->
+                            <td class="font-weight-bold" th:text="${app.candidateName != null ? app.candidateName : app.candidate.fullName}">Candidate Name</td>
+
+                            <!-- Current Stage -->
+                            <td>
+                                <span class="badge badge-info p-2" th:text="${app.status}">STAGE</span>
+                            </td>
+
+                            <!-- Days in Stage (Tính số ngày ở trạng thái hiện tại) -->
+                            <td th:text="${app.daysInStage != null ? app.daysInStage + ' days' : '0 days'}">0 days</td>
+
+                            <!-- Assigned Interviewer -->
+                            <td th:text="${app.assignedInterviewerName != null && !app.assignedInterviewerName.isEmpty() ? app.assignedInterviewerName : 'None'}">None</td>
+
+                            <!-- Action Link -> SCR-17 -->
+                            <td class="text-center">
+                                <a th:href="@{/applications/{id}(id=${app.id != null ? app.id : app.applicationId})}"
+                                   class="btn btn-sm btn-primary">Open</a>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
+
     </div>
 
+    <!-- NAVIGATION BACK BUTTON -->
     <div class="mt-3">
-        <a href="/hr/dashboard" class="btn btn-secondary">Quay lại Dashboard</a>
+        <a th:href="@{/hr/dashboard}" class="btn btn-secondary">Quay lại Dashboard</a>
     </div>
 </div>
+
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- NHẬP THƯ VIỆN CHART.JS BÊN DƯỚI ĐỂ TRÁNH BỊ LAYOUT REPLACE MẤT -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- SCRIPT VẼ HORIZONTAL BAR CHART THEO CÁC STAGE SPEC -->
+<script th:inline="javascript" th:if="${applications != null && !applications.isEmpty()}">
+    document.addEventListener("DOMContentLoaded", function() {
+        const canvas = document.getElementById('pipelineChart');
+        if (!canvas) return;
+
+        /* Lấy Map số lượng từ Model */
+        const stageCounts = /*[[${stageCountsMap}]]*/ {};
+
+        const ctx = canvas.getContext('2d');
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['Applied', 'Screening', 'Interview', 'Offer', 'Hired', 'Rejected', 'Withdrawn'],
+                datasets: [{
+                    label: 'Candidate Count',
+                    data: [
+                        (stageCounts && stageCounts['APPLIED']) ? stageCounts['APPLIED'] : 0,
+                        (stageCounts && stageCounts['SCREENING']) ? stageCounts['SCREENING'] : 0,
+                        (stageCounts && stageCounts['INTERVIEW']) ? stageCounts['INTERVIEW'] : 0,
+                        (stageCounts && stageCounts['OFFER']) ? stageCounts['OFFER'] : 0,
+                        (stageCounts && stageCounts['HIRED']) ? stageCounts['HIRED'] : 0,
+                        (stageCounts && stageCounts['REJECTED']) ? stageCounts['REJECTED'] : 0,
+                        (stageCounts && stageCounts['WITHDRAWN']) ? stageCounts['WITHDRAWN'] : 0
+                    ],
+                    backgroundColor: [
+                        '#17a2b8', '#007bff', '#ffc107', '#fd7e14', '#28a745', '#dc3545', '#6c757d'
+                    ],
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Biểu đồ cột nằm ngang (Horizontal Bar Chart)
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        ticks: { stepSize: 1, precision: 0 }
+                    }
+                }
+            }
+        });
+    });
+</script>
+
 </body>
 </html>

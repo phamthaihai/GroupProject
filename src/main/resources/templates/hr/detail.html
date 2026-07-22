@@ -1,51 +1,215 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="~{fragments/layout :: head('Chi tiết đơn ứng tuyển - TalentHub')}">
     <title>Chi tiết đơn ứng tuyển</title>
-    <!-- Thêm link Bootstrap để dùng được các class đẹp -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
+<header th:replace="~{fragments/layout :: header}"></header>
 
-<div class="container mt-5">
-    <div class="card shadow-sm" style="max-width: 600px; margin: auto;">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Thông tin đơn ứng tuyển</h4>
+<div class="container my-4">
+    <!-- Notification Banners -->
+    <div th:if="${successMessage}" class="alert alert-success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="alert alert-danger" th:text="${errorMessage}"></div>
+
+    <!-- TERMINAL STATUS BANNERS -->
+    <div th:if="${appDetail.status == 'HIRED'}" class="alert alert-success font-weight-bold">
+        This candidate has been hired.
+    </div>
+    <div th:if="${appDetail.status == 'REJECTED'}" class="alert alert-danger font-weight-bold">
+        This candidate has been rejected.
+    </div>
+    <div th:if="${appDetail.status == 'WITHDRAWN'}" class="alert alert-warning font-weight-bold">
+        This candidate withdrew their application.
+    </div>
+
+    <!-- MAIN CARD: THÔNG TIN ỨNG VIÊN -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">Thông tin ứng tuyển</h4>
+            <!-- Nút Download CV -->
+            <a th:if="${appDetail.cvUrl != null}"
+               th:href="@{/applications/{id}/download-cv(id=${appDetail.applicationId})}"
+               class="btn btn-sm btn-light">Download CV</a>
         </div>
         <div class="card-body">
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>ID đơn:</strong></span>
-                    <span th:text="${appDetail.applicationId}"></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Ứng viên:</strong></span>
-                    <span th:text="${appDetail.candidateName}"></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Email:</strong></span>
-                    <span th:text="${appDetail.candidateEmail}"></span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between">
-                    <span><strong>Trạng thái:</strong></span>
-                    <span class="badge badge-info p-2" th:text="${appDetail.status}"></span>
-                </li>
-            </ul>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>ID đơn:</strong> <span th:text="${appDetail.applicationId}"></span></p>
+                    <p><strong>Ứng viên:</strong> <span th:text="${appDetail.candidateName}"></span></p>
+                    <p><strong>Email:</strong> <span th:text="${appDetail.candidateEmail}"></span></p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Ngày nộp:</strong> <span th:text="${appDetail.submissionDate != null ? #temporals.format(appDetail.submissionDate, 'dd/MM/yyyy') : 'N/A'}"></span></p>
+                    <p><strong>Trạng thái:</strong>
+                        <span class="badge badge-info p-2" th:text="${appDetail.status}">STATUS</span>
+                    </p>
+                </div>
+            </div>
         </div>
-        <div class="card-footer text-right">
-            <!-- Nút Quay lại luôn đưa về trang User Management (SCR-08) -->
-            <a th:href="@{/admin/users}" class="btn btn-secondary">Quay lại</a>
+    </div>
 
-            <!-- Nút Gán lịch phỏng vấn (SCR-18) luôn hiển thị -->
-            <a th:href="@{'/interview/assign/' + ${appDetail.applicationId}}"
-               class="btn btn-primary">Gán lịch phỏng vấn</a>
+    <!-- ============================================================== -->
+    <!-- DÀNH RIÊNG CHO HR MANAGER VÀ ADMIN -->
+    <!-- ============================================================== -->
+    <div th:if="${currentUser != null && currentUser.role != null && (currentUser.role.name() == 'HR_MANAGER' || currentUser.role.name() == 'ADMIN')}">
 
-            <!-- Nút Đánh giá ứng viên (SCR-19) luôn hiển thị -->
-            <a th:href="@{'/interview/evaluate/' + ${appDetail.applicationId}}"
-               class="btn btn-success">Đánh giá ứng viên</a>
+        <!-- PIPELINE STAGE CONTROLS -->
+        <div th:if="${appDetail.status != 'HIRED' && appDetail.status != 'REJECTED' && appDetail.status != 'WITHDRAWN'}"
+             class="card shadow-sm mb-4">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">Pipeline Controls</h5>
+            </div>
+            <div class="card-body">
+                <div class="btn-group">
+                    <!-- Stage Applied -->
+                    <div th:if="${appDetail.status == 'APPLIED'}">
+                        <form th:action="@{/applications/{id}/advance(id=${appDetail.applicationId})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success mr-2">Move to Screening</button>
+                        </form>
+                    </div>
+
+                    <!-- Stage Screening -->
+                    <div th:if="${appDetail.status == 'SCREENING'}">
+                        <form th:action="@{/applications/{id}/advance(id=${appDetail.applicationId})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success mr-2">Move to Interview</button>
+                        </form>
+                    </div>
+
+                    <!-- Stage Interview -->
+                    <div th:if="${appDetail.status == 'INTERVIEW'}">
+                        <!-- Nút Gán lịch phỏng vấn (SCR-18) -->
+                        <a th:href="@{/hr/applications/{id}/assign(id=${appDetail.applicationId})}"
+                           class="btn btn-primary mr-2">Interview Assignment (SCR-18)</a>
+
+                        <form th:action="@{/applications/{id}/advance(id=${appDetail.applicationId})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success mr-2">Move to Offer</button>
+                        </form>
+                    </div>
+
+                    <!-- Stage Offer -->
+                    <div th:if="${appDetail.status == 'OFFER'}">
+                        <form th:action="@{/applications/{id}/advance(id=${appDetail.applicationId})}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-success mr-2">Mark as Hired</button>
+                        </form>
+                    </div>
+
+                    <!-- Nút Reject -->
+                    <form th:action="@{/applications/{id}/reject(id=${appDetail.applicationId})}" method="post" style="display:inline;">
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Bạn có chắc muốn từ chối ứng viên này?')">Reject</button>
+                    </form>
+                </div>
+            </div>
         </div>
+
+        <!-- ============================================================== -->
+        <!-- HIỂN THỊ THÔNG TIN LỊCH PHỎNG VẤN VỪA GÁN TẠI SCR-18 -->
+        <!-- ============================================================== -->
+        <div th:if="${appDetail.interviews != null && !appDetail.interviews.isEmpty()}" class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Thông tin Lịch phỏng vấn đã xếp</h5>
+            </div>
+            <div class="card-body">
+                <div th:each="itv : ${appDetail.interviews}" class="border-bottom pb-2 mb-2">
+                    <p class="mb-1">
+                        <strong>Người phỏng vấn:</strong>
+                        <span th:text="${itv.interviewerName != null ? itv.interviewerName : 'N/A'}">Charlie Brown</span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Ngày & Giờ:</strong>
+                        <span th:text="${itv.interviewDate != null ? #temporals.format(itv.interviewDate, 'dd/MM/yyyy') : ''}">22/07/2026</span>
+                        lúc
+                        <span th:text="${itv.interviewTime}">14:00</span>
+                    </p>
+                    <p class="mb-1">
+                        <strong>Địa điểm / Link họp:</strong>
+                        <span th:text="${itv.locationOrLink != null && !itv.locationOrLink.isEmpty() ? itv.locationOrLink : 'Chưa cập nhật'}">Phòng 302</span>
+                    </p>
+                    <p class="mb-0">
+                        <strong>Trạng thái:</strong>
+                        <span class="badge"
+                              th:classappend="${itv.status == 'EVALUATED' ? 'badge-success' : 'badge-warning'}"
+                              th:text="${itv.status}">SCHEDULED</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- EVALUATION SUMMARY (Danh sách đánh giá đã nộp từ Interviewer) -->
+        <div th:if="${appDetail.evaluations != null && !appDetail.evaluations.isEmpty()}" class="card shadow-sm mb-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">Evaluation Summary</h5>
+            </div>
+            <div class="card-body">
+                <div th:each="eval : ${appDetail.evaluations}" class="border-bottom pb-2 mb-2">
+                    <p class="mb-1"><strong>Interviewer:</strong> <span th:text="${eval.interviewerName != null ? eval.interviewerName : 'N/A'}"></span></p>
+                    <p class="mb-1"><strong>Đánh giá:</strong> <span class="text-warning font-weight-bold" th:text="${eval.rating}"></span> / 5 ⭐</p>
+                    <p class="mb-1"><strong>Nhận xét:</strong> <span th:text="${eval.feedback}"></span></p>
+                    <small class="text-muted" th:if="${eval.evaluatedAt != null}">
+                        Ngày đánh giá: <span th:text="${#temporals.format(eval.evaluatedAt, 'dd/MM/yyyy HH:mm')}"></span>
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- INTERNAL NOTES SECTION -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-dark text-white">
+                <h5 class="mb-0">Internal Notes</h5>
+            </div>
+            <div class="card-body">
+                <!-- Form thêm note mới -->
+                <form th:action="@{/applications/{id}/notes(id=${appDetail.applicationId})}" method="post" class="mb-3">
+                    <div class="form-group">
+                        <textarea name="content" class="form-control" rows="3" placeholder="Nhập ghi chú nội bộ..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-sm">Add Note</button>
+                </form>
+
+                <!-- Danh sách note cũ -->
+                <div class="list-group" th:if="${appDetail.internalNotes != null}">
+                    <div th:each="note : ${appDetail.internalNotes}" class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1 font-weight-bold" th:text="${note.authorName}">Author</h6>
+                            <small class="text-muted" th:if="${note.createdAt != null}" th:text="${#temporals.format(note.createdAt, 'dd/MM/yyyy HH:mm')}">Time</small>
+                        </div>
+                        <p class="mb-1" th:text="${note.content}">Note content</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ============================================================== -->
+    <!-- DÀNH RIÊNG CHO INTERVIEWER -->
+    <!-- ============================================================== -->
+    <div th:if="${currentUser != null && currentUser.role != null && currentUser.role.name() == 'INTERVIEWER'}">
+
+        <!-- TH1: Khi phỏng vấn đang ở dạng SCHEDULED -> Nút dẫn tới SCR-19 -->
+        <div th:if="${appDetail.interviewStatus != null && appDetail.interviewStatus.toString() == 'SCHEDULED'}" class="card shadow-sm mb-4">
+            <div class="card-body text-center">
+                <h5>Bạn có lịch phỏng vấn ứng viên này</h5>
+                <a th:href="@{/interview/evaluate/{interviewId}(interviewId=${appDetail.interviewId})}"
+                   class="btn btn-success btn-lg mt-2">Submit Evaluation (SCR-19)</a>
+            </div>
+        </div>
+
+        <!-- TH2: Khi phỏng vấn đã EVALUATED -> Hiện Banner thông báo read-only -->
+        <div th:if="${appDetail.interviewStatus != null && appDetail.interviewStatus.toString() == 'EVALUATED'}" class="alert alert-info">
+            <h5>Evaluation Submitted</h5>
+            <p>You have submitted your evaluation for this candidate.</p>
+            <hr>
+            <p class="mb-1"><strong>Your Rating:</strong> <span th:text="${appDetail.myRating}"></span> / 5 ⭐</p>
+            <p class="mb-0"><strong>Your Feedback:</strong> <span th:text="${appDetail.myFeedback}"></span></p>
+        </div>
+    </div>
+
+    <!-- FOOTER ACTIONS -->
+    <div class="d-flex justify-content-start mt-3 mb-5">
+        <a href="javascript:history.back()" class="btn btn-secondary">Quay lại</a>
     </div>
 </div>
 
+<footer th:replace="~{fragments/layout :: footer}"></footer>
 </body>
 </html>

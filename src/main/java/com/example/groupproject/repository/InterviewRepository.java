@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Repository cho entity Interview.
@@ -15,7 +17,12 @@ import java.time.LocalDate;
  * nên tự động tương thích với entity đã sửa.
  */
 public interface InterviewRepository extends JpaRepository<Interview, Integer> {
+    boolean existsByApplicationIdAndInterviewerId(Integer applicationId, Integer interviewerId);
 
+    // Nếu bạn chỉ muốn lấy 1 buổi phỏng vấn duy nhất:
+    List<Interview> findByApplicationId(Integer applicationId);
+
+    Optional<Interview> findFirstByApplicationId(Integer applicationId);
     /**
      * Đếm số interview sắp diễn ra trong khoảng thời gian, có thể scope theo job creator.
      * Dùng cho dashboard stats "upcoming interviews (7 days)".
